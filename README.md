@@ -1,5 +1,4 @@
-
-# AI_capstone# Sorvex 360 — AI-Powered Utility Workforce Prediction Pipeline
+# Sorvex 360 — AI-Powered Utility Workforce Prediction Pipeline
 
 > **Predict • Prepare • Place • Post-Hire Outcomes**
 
