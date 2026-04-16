@@ -1,3 +1,5 @@
+# Sorvex 360 Prediction API — v1.1 retrained 2026-04-15
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
