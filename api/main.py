@@ -15,6 +15,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 PROJECT_ID  = os.getenv("PROJECT_ID", "sorvex360-493312")
 BUCKET_NAME = os.getenv("BUCKET_NAME", "sorvex360-raw-data")
 REGION      = os.getenv("REGION", "us-central1")
