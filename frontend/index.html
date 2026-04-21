@@ -200,6 +200,11 @@
     border-bottom: 1px solid rgba(255,255,255,0.06);
   }
 
+  /* Phase 2 section gets a slightly different accent to distinguish it */
+  .form-section-title.phase2 {
+    color: var(--teal);
+  }
+
   .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -222,6 +227,11 @@
     text-transform: uppercase;
   }
 
+  /* Phase 2 labels get a subtle teal tint */
+  .phase2-label {
+    color: #5EEAD4;
+  }
+
   input, select {
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.1);
@@ -239,6 +249,13 @@
     border-color: var(--blue);
     background: rgba(37,99,235,0.08);
     box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+  }
+
+  /* Phase 2 inputs get teal focus */
+  .phase2-input:focus {
+    border-color: var(--teal);
+    background: rgba(13,148,136,0.08);
+    box-shadow: 0 0 0 3px rgba(13,148,136,0.15);
   }
 
   select option { background: var(--navy-mid); color: white; }
@@ -263,6 +280,12 @@
     text-align: center;
   }
 
+  .score-badge.teal {
+    background: rgba(13,148,136,0.15);
+    border-color: rgba(13,148,136,0.3);
+    color: #2DD4BF;
+  }
+
   input[type="range"] {
     padding: 0;
     height: 4px;
@@ -271,6 +294,22 @@
     border-radius: 2px;
     cursor: pointer;
     accent-color: var(--blue);
+  }
+
+  input[type="range"].teal-range {
+    accent-color: var(--teal);
+  }
+
+  /* Phase 2 info tooltip */
+  .phase2-note {
+    background: rgba(13,148,136,0.08);
+    border: 1px solid rgba(13,148,136,0.2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #5EEAD4;
+    margin-bottom: 16px;
+    line-height: 1.5;
   }
 
   /* ── Submit button ── */
@@ -572,7 +611,7 @@
       <div class="logo-sub">Workforce Risk Intelligence</div>
     </div>
   </div>
-  <div class="header-badge">API Connected · v1.0</div>
+  <div class="header-badge">API Connected · v1.3</div>
 </header>
 
 <div class="hero">
@@ -774,6 +813,77 @@
       </div>
     </div>
 
+    <!-- ── NEW: Phase 2 Training Program Section ── -->
+    <div class="form-section">
+      <div class="form-section-title phase2">05 — Training Program Outcomes</div>
+      <div class="phase2-note">
+        📋 These fields reflect post-assessment training data. They are the primary drivers of the <strong>Promotion</strong> and <strong>Safety</strong> predictions. Adjust them to see how training performance affects risk scores.
+      </div>
+      <div class="form-grid">
+
+        <div class="form-group full">
+          <label class="phase2-label">Attendance Rate</label>
+          <div class="score-input-group">
+            <input type="range" class="teal-range" id="AttendanceRate" min="50" max="99" value="80"
+              oninput="updateBadgeDecimal('AttendanceRate','att-badge')">
+            <div class="score-badge teal" id="att-badge">0.80</div>
+          </div>
+        </div>
+
+        <div class="form-group full">
+          <label class="phase2-label">Safety Commitment Score (1–5)</label>
+          <div class="score-input-group">
+            <input type="range" class="teal-range" id="SafetyCommitmentScore" min="10" max="50" value="30"
+              oninput="updateBadgeDecimal('SafetyCommitmentScore','safety-badge')">
+            <div class="score-badge teal" id="safety-badge">3.0</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="phase2-label">Total Training Hours</label>
+          <input type="number" class="phase2-input" id="TotalTrainingHours" value="6400" min="500" max="10000" step="100">
+        </div>
+
+        <div class="form-group">
+          <label class="phase2-label">Certifications Earned</label>
+          <input type="number" class="phase2-input" id="CertificationsEarned" value="2" min="0" max="6">
+        </div>
+
+        <div class="form-group">
+          <label class="phase2-label">Passed Required Modules</label>
+          <select class="phase2-input" id="PassedRequiredModules">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="phase2-label">Physical Test Result</label>
+          <select class="phase2-input" id="PhysicalTestResult">
+            <option value="1">Pass</option>
+            <option value="0">Fail</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="phase2-label">Union Status at Placement</label>
+          <select class="phase2-input" id="UnionStatus">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="phase2-label">Apprenticeship Registered</label>
+          <select class="phase2-input" id="Apprenticeship_Registered">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
     <button class="submit-btn" id="submitBtn" onclick="runPrediction()">
       <span id="btnText">Run Risk Prediction</span>
       <div class="btn-loader" id="btnLoader"></div>
@@ -836,11 +946,24 @@
     document.getElementById(badgeId).textContent = document.getElementById(inputId).value;
   }
 
-  function getVal(id) {
-    const el = document.getElementById(id);
-    const v = el.value;
-    if (el.tagName === 'SELECT' || el.type === 'text') return v;
-    return parseFloat(v);
+  // For sliders that represent decimal values (attendance 50-99 → 0.50-0.99, safety 10-50 → 1.0-5.0)
+  function updateBadgeDecimal(inputId, badgeId) {
+    const val = parseInt(document.getElementById(inputId).value);
+    let display;
+    if (inputId === 'AttendanceRate') {
+      display = (val / 100).toFixed(2);
+    } else if (inputId === 'SafetyCommitmentScore') {
+      display = (val / 10).toFixed(1);
+    }
+    document.getElementById(badgeId).textContent = display;
+  }
+
+  function getAttendance() {
+    return parseInt(document.getElementById('AttendanceRate').value) / 100;
+  }
+
+  function getSafety() {
+    return parseInt(document.getElementById('SafetyCommitmentScore').value) / 10;
   }
 
   function setLoading(loading) {
@@ -871,7 +994,19 @@
     document.getElementById('candidateInfo').classList.remove('visible');
     document.getElementById('errorCard').classList.remove('visible');
 
-    const piScore = getVal('Sorvex360PI_Score');
+    const piScore = parseFloat(document.getElementById('Sorvex360PI_Score').value);
+    const attendance = getAttendance();
+    const safetyScore = getSafety();
+    const simScore = parseInt(document.getElementById('SimulationScore').value);
+    const trainHrs = parseInt(document.getElementById('TotalTrainingHours').value);
+    const certs = parseInt(document.getElementById('CertificationsEarned').value);
+    const passedModules = parseInt(document.getElementById('PassedRequiredModules').value);
+    const physTest = parseInt(document.getElementById('PhysicalTestResult').value);
+    const unionStatus = parseInt(document.getElementById('UnionStatus').value);
+    const apprReg = parseInt(document.getElementById('Apprenticeship_Registered').value);
+
+    // ReadinessDelta — estimated from PI score and attendance signal
+    const readinessDelta = parseFloat(((attendance - 0.75) * 20 + (piScore - 65) * 0.2).toFixed(1));
 
     const payload = {
       SOC_Code:                String(document.getElementById('SOC_Code').value),
@@ -880,7 +1015,7 @@
       State:                   String(document.getElementById('State').value),
       EducationLevel:          String(document.getElementById('EducationLevel').value),
       CognitiveScore:          parseInt(document.getElementById('CognitiveScore').value),
-      SimulationScore:         parseInt(document.getElementById('SimulationScore').value),
+      SimulationScore:         simScore,
       BehavioralScore:         parseInt(document.getElementById('BehavioralScore').value),
       SituationalScore:        parseInt(document.getElementById('SituationalScore').value),
       Sorvex360PI_Score:       piScore,
@@ -897,19 +1032,21 @@
       SourceOfCandidate:       String(document.getElementById('SourceOfCandidate').value),
       Sorvex360PI_Score_AtCompletion: piScore,
       Sorvex360PI_ScoreAtHire:        piScore,
-      TotalTrainingHours:      6400,
-      AttendanceRate:          0.80,
-      PassedRequiredModules:   1,
-      CertificationsEarned:    2,
-      SimulationPerformance:   parseInt(document.getElementById('SimulationScore').value),
-      SafetyCommitmentScore:   3.0,
+      // Phase 2 — now from form inputs
+      TotalTrainingHours:      trainHrs,
+      AttendanceRate:          attendance,
+      PassedRequiredModules:   passedModules,
+      CertificationsEarned:    certs,
+      SimulationPerformance:   simScore,
+      SafetyCommitmentScore:   safetyScore,
       TeamworkScore:           3.2,
-      ReliabilityScore:        3.3,
-      PhysicalTestResult:      1,
-      Lift50lbsTest:           1,
+      ReliabilityScore:        parseFloat((2.5 + attendance * 1.0).toFixed(2)),
+      PhysicalTestResult:      physTest,
+      Lift50lbsTest:           physTest,
       Completed:               1,
-      ReadinessDelta:          5.0,
-      UnionStatus:             0,
+      ReadinessDelta:          readinessDelta,
+      // Phase 3 — now from form inputs
+      UnionStatus:             unionStatus,
       EmploymentType:          "Full-Time",
       RoleRequires_CDL:        0,
       RoleRequires_OSHA10:     0,
@@ -917,9 +1054,9 @@
       PreHire_Verified_MVR:    1,
       PreHire_Verified_DrugScreen: 1,
       PreHire_Verified_Background: 1,
-      Orientation_LOTO_Completed: 1,
+      Orientation_LOTO_Completed: safetyScore >= 3.0 ? 1 : 0,
       Orientation_PPE_Fitted:  1,
-      Apprenticeship_Registered: 0,
+      Apprenticeship_Registered: apprReg,
     };
 
     try {
@@ -1008,13 +1145,16 @@
       '43-5041.00': 'Meter Reader, Utilities',
     };
     const rows = [
-      ['SOC Role', socLabels[summary.soc_code] || summary.soc_code],
-      ['PI Score', summary.pi_score.toFixed(1)],
-      ['Age', payload.Age],
-      ['Education', payload.EducationLevel],
-      ['State', payload.State],
-      ['Prior Experience', payload.HasPriorTradeExperience ? 'Yes' : 'No'],
-      ['Veteran', payload.VeteranStatus ? 'Yes' : 'No'],
+      ['SOC Role',        socLabels[summary.soc_code] || summary.soc_code],
+      ['PI Score',        summary.pi_score.toFixed(1)],
+      ['Age',             payload.Age],
+      ['Education',       payload.EducationLevel],
+      ['State',           payload.State],
+      ['Attendance',      (payload.AttendanceRate * 100).toFixed(0) + '%'],
+      ['Safety Score',    payload.SafetyCommitmentScore.toFixed(1) + ' / 5'],
+      ['Training Hrs',    payload.TotalTrainingHours.toLocaleString()],
+      ['Prior Exp',       payload.HasPriorTradeExperience ? 'Yes' : 'No'],
+      ['Veteran',         payload.VeteranStatus ? 'Yes' : 'No'],
     ];
     document.getElementById('candidateInfoRows').innerHTML = rows.map(([l, v]) =>
       `<div class="info-row"><span class="info-label">${l}</span><span class="info-value">${v}</span></div>`
