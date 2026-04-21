@@ -1,4 +1,4 @@
-# Sorvex 360 Prediction API — v1.2
+# Sorvex 360 Prediction API — v1.3
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -12,7 +12,7 @@ import tempfile
 app = FastAPI(
     title="Sorvex 360 Prediction API",
     description="Predicts retention, safety, and promotion risk for utility workforce candidates",
-    version="1.0.0"
+    version="1.3.0"
 )
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -100,21 +100,33 @@ class CandidateProfile(BaseModel):
     Sorvex360PI_ScoreAtHire:        Optional[float] = Field(default=None)
 
 # ── Risk tier logic ───────────────────────────────────────────────────────────
+# Retention:  high probability of staying    = Low risk
+# Safety:     high probability of incident   = High risk
+# Promotion:  high probability of promoting  = Low risk
 def get_risk_tier(probability: float, outcome: str) -> str:
     if outcome == "retention":
         if probability >= 0.75: return "Low"
         if probability >= 0.50: return "Medium"
         return "High"
-    else:
+    elif outcome == "safety":
         if probability >= 0.60: return "High"
         if probability >= 0.35: return "Medium"
         return "Low"
+    else:  # promotion — higher probability = better outcome = lower risk
+        if probability >= 0.60: return "Low"
+        if probability >= 0.35: return "Medium"
+        return "High"
 
 def get_risk_score(probability: float, outcome: str) -> int:
     if outcome == "retention":
+        # High retention probability = high score (good)
         return int(probability * 100)
-    else:
+    elif outcome == "safety":
+        # High safety incident probability = low score (bad)
         return int((1 - probability) * 100)
+    else:  # promotion
+        # High promotion probability = high score (good)
+        return int(probability * 100)
 
 # ── Health check ──────────────────────────────────────────────────────────────
 @app.get("/health")
@@ -122,7 +134,7 @@ def health():
     return {
         "status": "ok",
         "models_loaded": list(models.keys()),
-        "version": "1.0.0"
+        "version": "1.3.0"
     }
 
 @app.get("/")
@@ -234,5 +246,5 @@ def predict(candidate: CandidateProfile):
             "overall_tier":  overall_tier,
         },
         "predictions": predictions,
-        "model_version": "v1.0",
+        "model_version": "v1.3",
     }
