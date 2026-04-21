@@ -10,8 +10,8 @@ Sorvex 360 is an end-to-end machine learning pipeline that generates synthetic u
 
 The utility industry faces a critical workforce challenge — high turnover, aging workforce, and difficulty predicting which candidates will succeed in skilled trades roles. Sorvex 360 addresses this by:
 
-1. **Generating** a statistically grounded synthetic dataset of 5,000 utility workforce candidate profiles across 6 SOC codes
-2. **Training** gradient boosting models to predict 3 key post-hire outcomes
+1. **Generating** a statistically grounded synthetic dataset of 10,000 utility workforce candidate profiles across 6 SOC codes using pure rule-based generation calibrated to BLS, ONET, OSHA, and WA L&I data sources
+2. **Training** HistGradientBoosting models to predict 3 key post-hire outcomes
 3. **Serving** predictions through a REST API that returns Low/Medium/High risk tiers per candidate
 4. **Storing** all data in BigQuery and registering models in Vertex AI for production use
 
@@ -22,9 +22,9 @@ The utility industry faces a critical workforce challenge — high turnover, agi
 ```
 Data Sources (BLS, ONET, OSHA, WA L&I, USEER)
         ↓
-Synthetic Pipeline (CTGAN + Statistical Seed Generation)
+Synthetic Pipeline (Pure Rule-Based Statistical Generation)
         ↓
-5,000 Candidate Profiles (4-Phase Schema)
+10,000 Candidate Profiles (4-Phase Schema)
         ↓
 Google Cloud Storage → BigQuery
         ↓
@@ -43,26 +43,31 @@ Looker Dashboard (Front End)
 
 | Phase | Name | Records | Key Fields |
 |---|---|---|---|
-| 1 | **Predict** | 5,000 | Demographics, Assessment Scores, PI Score |
-| 2 | **Prepare** | 5,000 | Training Hours, Attendance, Certifications |
-| 3 | **Place** | 5,000 | Employer, Employment Type, Compliance |
-| 4 | **Post-Hire** | 5,000 | Tenure, Safety Incidents, Promotions |
+| 1 | **Predict** | 10,000 | Demographics, Assessment Scores, PI Score |
+| 2 | **Prepare** | 10,000 | Training Hours, Attendance, Certifications |
+| 3 | **Place** | ~6,300 | Employer, Employment Type, Compliance |
+| 4 | **Post-Hire** | ~6,300 | Tenure, Safety Incidents, Promotions |
 
-All phases joined on `CandidateID` → `PlacementID`.
+Phase 3 and 4 records cover only candidates who completed training (~63% completion rate per WA L&I benchmarks). All phases joined on `CandidateID` → `PlacementID`.
 
 ---
 
 ## 🤖 Models
 
-Three binary classifiers trained using Gradient Boosting with class-weight balancing:
+Three binary classifiers trained using HistGradientBoostingClassifier with class-weight balancing and optimal F1 threshold tuning:
 
-| Model | Target | AUC-ROC | Description |
-|---|---|---|---|
-| Retention | `Tenure_1Year` | 0.70 | Will candidate stay 12+ months? |
-| Safety | `OSHA_Recordable_Incident` | 0.53 | OSHA incident likelihood |
-| Promotion | `PromotionWithin24Months` | 0.55 | Promotion within 24 months |
+| Model | Target | AUC-ROC | CV AUC | Threshold |
+|---|---|---|---|---|
+| Retention | `Tenure_1Year` | 0.865 | 0.861 ± 0.008 | 0.337 |
+| Safety | `OSHA_Recordable_Incident` | 0.774 | 0.776 ± 0.018 | 0.154 |
+| Promotion | `PromotionWithin24Months` | 0.743 | 0.746 ± 0.004 | 0.188 |
 
-**Key features:** `Sorvex360PI_Score`, `Completed`, `AttendanceRate`, `SafetyCommitmentScore`, `TotalTrainingHours`, `ReadinessDelta`
+**Key predictors:**
+- Retention: `Sorvex360PI_ScoreAtHire`, `AttendanceRate`, `TotalTrainingHours`, `UnionStatus`
+- Safety: `SafetyCommitmentScore` (dominant), `SOC_Code`, `Orientation_LOTO_Completed`
+- Promotion: `AttendanceRate`, `TotalTrainingHours`, `Sorvex360PI_Score`
+
+> **Note on safety model:** The OSHA model is optimized for recall over precision — it is intentionally designed to over-flag candidates as safety risks rather than miss a true incident. At 4.7% positive rate this is the appropriate tradeoff for a safety-critical application.
 
 ---
 
@@ -109,22 +114,24 @@ AI_capstone/
 │   ├── requirements.txt   # Python dependencies
 │   └── Dockerfile         # Cloud Run deployment
 ├── notebooks/
-│   ├── Sorvex360_Synthetic_Pipeline.py    # 5,000 record generation (CTGAN)
-│   ├── Sorvex360_VertexAI_Training.py     # Model training + Vertex AI registration
-│   ├── Sorvex360_OSHA_EDA.py              # OSHA severe injury EDA
-│   └── Sorvex360_FactoryWorker_EDA.py     # Factory worker behavior EDA
+│   ├── Sorvex360_Synthetic_Pipeline_V3.ipynb  # 10,000 record rule-based generation
+│   ├── Sorvex360_VertexAI_Training.ipynb      # Model training + Vertex AI registration
+│   ├── Sorvex360_Synthetic_Pipeline.py        # .py version of synthetic pipeline
+│   ├── Sorvex360_VertexAI_Training.py         # .py version of training pipeline
+│   ├── Sorvex360_OSHA_EDA.py                  # OSHA severe injury EDA
+│   └── Sorvex360_FactoryWorker_EDA.py         # Factory worker behavior EDA
 └── docs/
-    └── Sorvex360_Blueprint.docx           # Full field-by-field data blueprint
+    └── Sorvex360_Blueprint.docx               # Full field-by-field data blueprint
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Python** — pandas, scikit-learn, CTGAN (SDV), FastAPI
+- **Python** — pandas, scikit-learn, FastAPI
 - **Google Cloud Platform** — Cloud Storage, BigQuery, Vertex AI, Cloud Run
 - **Data Sources** — BLS, ONET, OSHA, WA L&I Apprenticeship, USEER, CPWR
-- **ML** — Gradient Boosting Classifier, CTGAN synthetic data generation
+- **ML** — HistGradientBoostingClassifier with permutation importance analysis
 
 ---
 
@@ -141,6 +148,19 @@ AI_capstone/
 
 ---
 
+## 📋 SOC Codes Covered
+
+| SOC Code | Role | Share |
+|---|---|---|
+| 49-2022.00 | Telecom Equipment Installer/Repairer | 28% |
+| 49-9051.00 | Power Line Installer/Repairer | 20% |
+| 51-8013.00 | Power Plant Operator | 16% |
+| 51-8031.00 | Water/Wastewater Treatment Plant Operator | 16% |
+| 51-8092.00 | Gas Plant Operator | 12% |
+| 43-5041.00 | Meter Reader, Utilities | 8% |
+
+---
+
 ## 🚀 Running the API Locally
 
 ```bash
@@ -150,6 +170,20 @@ uvicorn main:app --reload --port 8080
 ```
 
 API docs available at `http://localhost:8080/docs`
+
+---
+
+## 📊 Synthetic Data Design Notes
+
+The dataset uses pure rule-based generation — no generative AI or GAN-based synthesis. Every distribution, correlation, and outcome rate is directly calibrated to real-world data sources:
+
+- Assessment score distributions by SOC code from ONET
+- Training hours and completion rates from WA L&I 131K apprentice records
+- OSHA incident rates by SOC from OSHA Severe Injury dataset
+- Tenure distributions from BLS 2024 tenure tables by age band
+- Demographic distributions from USEER 2025 utility workforce report
+
+This approach ensures all ML signal chains are intentional, auditable, and free of GAN noise artifacts.
 
 ---
 
