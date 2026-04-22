@@ -1,4 +1,4 @@
-# Sorvex 360 Prediction API — v2.0
+# Sorvex 360 Prediction API — v2.1
 # New in v2.0:
 #   - SHAP explainability on all three models (top 3 factors per prediction)
 #   - Cohort percentile benchmarking per SOC code
@@ -461,7 +461,7 @@ def call_gemini(prompt: str, max_tokens: int = 512) -> str:
         from google.genai import types
         client = genai.Client(vertexai=True, project=PROJECT_ID, location=REGION)
         response = client.models.generate_content(
-            model="publishers/google/models/gemini-2.0-flash-001",
+            model="publishers/google/models/gemini-1.5-flash-002",
             contents=prompt,
             config=types.GenerateContentConfig(
                 max_output_tokens=max_tokens,
