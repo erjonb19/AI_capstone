@@ -466,7 +466,7 @@ def call_gemini(prompt: str, max_tokens: int = 512) -> str:
         except ImportError:
             from vertexai.preview.generative_models import GenerativeModel, GenerationConfig
 
-        model    = GenerativeModel("gemini-1.5-flash-001")
+        model    = GenerativeModel("gemini-2.0-flash-001")
         response = model.generate_content(
             prompt,
             generation_config=GenerationConfig(max_output_tokens=max_tokens, temperature=0.4)
