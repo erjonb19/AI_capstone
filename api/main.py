@@ -62,12 +62,13 @@ def load_models():
     background = _build_background_data()
     for name, pipeline in models.items():
         try:
-            explainer = shap.Explainer(
-                pipeline.predict_proba,
-                background,
-                output_names=["No", "Yes"]
-            )
-            shap_explainers[name] = explainer
+            # Transform background data through the pipeline preprocessor
+            # then build a TreeExplainer on the raw classifier
+            preprocessor = pipeline.named_steps['preprocessor']
+            classifier   = pipeline.named_steps['classifier']
+            X_bg_transformed = preprocessor.transform(background)
+            explainer = shap.TreeExplainer(classifier, data=X_bg_transformed)
+            shap_explainers[name] = (explainer, preprocessor)
             print(f"  SHAP ready: {name}")
         except Exception as e:
             print(f"  SHAP failed for {name}: {e}")
@@ -213,18 +214,50 @@ FEATURE_LABELS = {
 }
 
 def get_shap_factors(model_name: str, X: pd.DataFrame, n_factors: int = 3) -> list:
-    explainer = shap_explainers.get(model_name)
-    if explainer is None:
+    entry = shap_explainers.get(model_name)
+    if entry is None:
         return []
     try:
-        shap_values = explainer(X)
-        vals = shap_values[0, :, 1].values
-        feature_names = list(X.columns)
-        top_idx = np.argsort(np.abs(vals))[::-1][:n_factors]
+        explainer, preprocessor = entry
+
+        # Transform the candidate row through the preprocessor
+        X_transformed = preprocessor.transform(X)
+
+        # Get SHAP values — TreeExplainer returns shape (n_samples, n_features)
+        # For binary classification it may return a list of two arrays; take index [1] (positive class)
+        shap_values = explainer.shap_values(X_transformed)
+        if isinstance(shap_values, list):
+            vals = shap_values[1][0]   # positive class, first (only) sample
+        else:
+            vals = shap_values[0]      # single output
+
+        # Map back to original feature names using the raw X columns
+        # We use the original feature names since transformed columns are anonymous
+        original_feature_names = list(X.columns)
+
+        # If transformed dimension differs from original (due to one-hot),
+        # fall back to numeric-only features which have 1:1 mapping
+        numeric_features = [c for c in original_feature_names
+                            if X[c].dtype in [np.float64, np.float32, np.int64, np.int32, int, float]]
+
+        # Get the numeric transformer output count to align SHAP values
+        try:
+            n_numeric = len(preprocessor.named_transformers_['num'].transform(
+                X[numeric_features]
+            ).T)
+        except Exception:
+            n_numeric = len(numeric_features)
+
+        # Use only the numeric SHAP values — these map cleanly to feature names
+        vals_numeric = vals[:n_numeric]
+        top_idx = np.argsort(np.abs(vals_numeric))[::-1][:n_factors]
+
         factors = []
         for idx in top_idx:
-            name      = feature_names[idx]
-            value     = float(vals[idx])
+            if idx >= len(numeric_features):
+                continue
+            name      = numeric_features[idx]
+            value     = float(vals_numeric[idx])
             raw_val   = X.iloc[0][name]
             label     = FEATURE_LABELS.get(name, name)
             direction = "increases" if value > 0 else "decreases"
@@ -425,8 +458,14 @@ def run_predictions(candidate: CandidateProfile) -> dict:
 def call_gemini(prompt: str, max_tokens: int = 512) -> str:
     try:
         import vertexai
-        from vertexai.generative_models import GenerativeModel, GenerationConfig
         vertexai.init(project=PROJECT_ID, location=REGION)
+
+        # Try new SDK path first, fall back to older path
+        try:
+            from vertexai.generative_models import GenerativeModel, GenerationConfig
+        except ImportError:
+            from vertexai.preview.generative_models import GenerativeModel, GenerationConfig
+
         model    = GenerativeModel("gemini-1.5-flash")
         response = model.generate_content(
             prompt,
