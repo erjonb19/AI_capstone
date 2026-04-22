@@ -455,7 +455,7 @@ def run_predictions(candidate: CandidateProfile) -> dict:
 
 
 # ── Gemini helper ─────────────────────────────────────────────────────────────
-def call_gemini(prompt: str, max_tokens: int = 512) -> str:
+def call_gemini(prompt: str, max_tokens: int = 1024) -> str:
     try:
         from google import genai
         from google.genai import types
@@ -465,7 +465,8 @@ def call_gemini(prompt: str, max_tokens: int = 512) -> str:
             contents=prompt,
             config=types.GenerateContentConfig(
                 max_output_tokens=max_tokens,
-                temperature=0.4
+                temperature=0.4,
+                thinking_config=types.ThinkingConfig(thinking_budget=0)
             )
         )
         return response.text.strip()
