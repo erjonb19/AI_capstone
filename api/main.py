@@ -457,19 +457,16 @@ def run_predictions(candidate: CandidateProfile) -> dict:
 # ── Gemini helper ─────────────────────────────────────────────────────────────
 def call_gemini(prompt: str, max_tokens: int = 512) -> str:
     try:
-        import vertexai
-        vertexai.init(project=PROJECT_ID, location=REGION)
-
-        # Try new SDK path first, fall back to older path
-        try:
-            from vertexai.generative_models import GenerativeModel, GenerationConfig
-        except ImportError:
-            from vertexai.preview.generative_models import GenerativeModel, GenerationConfig
-
-        model    = GenerativeModel("gemini-2.0-flash-001")
-        response = model.generate_content(
-            prompt,
-            generation_config=GenerationConfig(max_output_tokens=max_tokens, temperature=0.4)
+        from google import genai
+        from google.genai import types
+        client = genai.Client(vertexai=True, project=PROJECT_ID, location=REGION)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-001",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                max_output_tokens=max_tokens,
+                temperature=0.4
+            )
         )
         return response.text.strip()
     except Exception as e:
