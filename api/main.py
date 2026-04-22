@@ -461,7 +461,7 @@ def call_gemini(prompt: str, max_tokens: int = 512) -> str:
         from google.genai import types
         client = genai.Client(vertexai=True, project=PROJECT_ID, location=REGION)
         response = client.models.generate_content(
-            model="publishers/google/models/gemini-1.5-flash",
+            model="gemini-1.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 max_output_tokens=max_tokens,
