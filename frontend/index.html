@@ -5,16 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sorvex 360 — Workforce Risk Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
-    --navy: #0D1B2A; --navy-mid: #1B3A6B; --blue: #2563EB; --blue-light: #3B82F6;
-    --teal: #0D9488; --slate: #94A3B8; --slate-light: #CBD5E1; --white: #FFFFFF;
-    --low: #059669; --low-bg: #D1FAE5; --med: #D97706; --med-bg: #FEF3C7;
-    --high: #DC2626; --high-bg: #FEE2E2; --border: #E2E8F0;
+    --navy:       #0D1B2A;
+    --navy-mid:   #1B3A6B;
+    --blue:       #2563EB;
+    --blue-light: #3B82F6;
+    --teal:       #0D9488;
+    --slate:      #94A3B8;
+    --slate-light:#CBD5E1;
+    --white:      #FFFFFF;
+    --low:        #059669;
+    --low-bg:     #D1FAE5;
+    --med:        #D97706;
+    --med-bg:     #FEF3C7;
+    --high:       #DC2626;
+    --high-bg:    #FEE2E2;
+    --border:     #E2E8F0;
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
     font-family: 'Outfit', sans-serif;
@@ -24,317 +34,1158 @@
     overflow-x: hidden;
   }
 
-  /* Grid Background */
   body::before {
-    content: ''; position: fixed; inset: 0;
-    background-image: linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px);
-    background-size: 48px 48px; pointer-events: none; z-index: 0;
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
   }
 
-  /* ── Navigation ── */
-  nav {
-    position: fixed; top: 0; width: 100%; z-index: 100;
-    padding: 16px 48px; display: flex; align-items: center; justify-content: space-between;
-    background: rgba(13, 27, 42, 0.8); backdrop-filter: blur(12px);
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 24px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo { display: flex; align-items: center; gap: 12px; }
+
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--blue), var(--teal));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px; font-weight: 500; color: white; letter-spacing: -1px;
+  }
+
+  .logo-text { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--white); }
+  .logo-sub  { font-size: 11px; font-weight: 500; color: var(--slate); letter-spacing: 2px; text-transform: uppercase; margin-top: -2px; }
+
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  .header-badge {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px; padding: 6px 14px;
+    font-size: 12px; color: var(--slate-light);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .header-badge::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal); animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+  /* ── Compare mode layout ── */
+  .compare-toggle {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px; padding: 6px 14px;
+    font-size: 12px; color: var(--slate-light);
+    font-family: 'DM Mono', monospace;
+    cursor: pointer; transition: all 0.2s;
+  }
+
+  .compare-toggle:hover { background: rgba(37,99,235,0.15); border-color: var(--blue); }
+  .compare-toggle.active { background: rgba(37,99,235,0.2); border-color: var(--blue); color: var(--blue-light); }
+
+  .toggle-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--slate); transition: background 0.2s;
+  }
+  .compare-toggle.active .toggle-dot { background: var(--blue-light); }
+
+  /* Single mode: form left, results right */
+  .main {
+    position: relative; z-index: 10;
+    max-width: 1200px; margin: 0 auto;
+    padding: 0 48px 80px;
+    display: grid;
+    grid-template-columns: 1fr 440px;
+    gap: 32px; align-items: start;
+  }
+
+  /* Compare mode: full width 4-column grid */
+  .main.compare-mode {
+    grid-template-columns: 1fr 1fr;
+    max-width: 1500px;
+    gap: 24px;
+  }
+
+  .candidate-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .compare-label-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .compare-label-bar.a {
+    background: rgba(37,99,235,0.12);
+    border: 1px solid rgba(37,99,235,0.25);
+    color: var(--blue-light);
+  }
+
+  .compare-label-bar.b {
+    background: rgba(139,92,246,0.12);
+    border: 1px solid rgba(139,92,246,0.25);
+    color: #a78bfa;
+  }
+
+  /* In single mode, hide compare labels and B column */
+  .col-b { display: none; }
+  .main.compare-mode .col-b { display: flex; }
+  .main.compare-mode .compare-label-bar { display: flex; }
+
+  /* Hide single-mode results in compare mode, show compare results */
+  .single-results { display: flex; flex-direction: column; gap: 16px; }
+  .compare-results-panel { display: none; flex-direction: column; gap: 16px; }
+  .main.compare-mode .compare-results-panel { display: flex; }
+
+  /* Compare winner card */
+  .compare-winner-card {
+    background: rgba(37,99,235,0.08);
+    border: 1px solid rgba(37,99,235,0.2);
+    border-radius: 16px; padding: 20px;
+    grid-column: 1 / -1;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .winner-badge {
+    background: linear-gradient(135deg, var(--blue), var(--teal));
+    border-radius: 10px; padding: 8px 16px;
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+    display: inline-block; margin-bottom: 12px;
+  }
+
+  .compare-commentary { font-size: 13px; color: var(--slate-light); line-height: 1.7; white-space: pre-line; }
+
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: var(--blue-light); margin-bottom: 16px;
+  }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(36px, 5vw, 56px); line-height: 1.1; margin-bottom: 16px;
+    background: linear-gradient(135deg, #fff 0%, #94A3B8 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  .hero p { font-size: 17px; color: var(--slate); max-width: 560px; margin: 0 auto; line-height: 1.65; font-weight: 300; }
+
+  /* ── Form card ── */
+  .form-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px; padding: 36px;
+    backdrop-filter: blur(12px);
+  }
+
+  .form-section { margin-bottom: 28px; }
+
+  .form-section-title {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--blue-light); margin-bottom: 16px;
+    padding-bottom: 8px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
   }
 
-  .nav-links { display: flex; gap: 32px; }
-  .nav-links a { 
-    color: var(--slate); text-decoration: none; font-size: 13px; font-family: 'DM Mono', monospace; 
-    text-transform: uppercase; letter-spacing: 1px; transition: 0.2s;
-  }
-  .nav-links a:hover, .nav-links a.active { color: var(--blue-light); }
+  .form-section-title.phase2 { color: var(--teal); }
 
-  .nav-btn {
-    background: var(--blue); color: white; border: none; padding: 8px 16px;
-    border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
-  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
 
-  /* ── Hero ── */
-  .hero { padding: 140px 24px 60px; text-align: center; position: relative; z-index: 10; }
-  .hero h1 {
-    font-family: 'DM Serif Display', serif; font-size: clamp(36px, 5vw, 64px); line-height: 1.1; margin-bottom: 16px;
-    background: linear-gradient(135deg, #fff 0%, #94A3B8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  }
-  .hero p { font-size: 18px; color: var(--slate); max-width: 650px; margin: 0 auto 32px; line-height: 1.6; }
+  label { font-size: 11px; font-weight: 500; letter-spacing: 0.5px; color: var(--slate); text-transform: uppercase; }
+  .phase2-label { color: #5EEAD4; }
 
-  /* ── Layout Modes ── */
-  .main { max-width: 1200px; margin: 0 auto; padding: 48px; display: grid; grid-template-columns: 1fr 440px; gap: 32px; }
-  .main.compare-mode { grid-template-columns: 1fr 1fr; max-width: 1400px; }
-  
-  .section-container { display: none; padding-top: 80px; }
-  .section-container.active { display: block; }
-
-  /* ── Unified Compare Button ── */
-  .action-bar { grid-column: 1 / -1; display: flex; justify-content: center; margin-bottom: 24px; }
-  .compare-main-btn {
-    padding: 16px 48px; background: linear-gradient(135deg, var(--blue), var(--teal));
-    border: none; border-radius: 12px; color: white; font-weight: 600; cursor: pointer; width: 100%; max-width: 400px;
+  input, select {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; padding: 10px 14px;
+    color: var(--white); font-family: 'Outfit', sans-serif;
+    font-size: 14px; transition: all 0.2s; outline: none; width: 100%;
   }
 
-  /* ── Batch Table ── */
-  .batch-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 32px; }
-  .results-table { width: 100%; border-collapse: collapse; margin-top: 24px; }
-  .results-table th { text-align: left; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-family: 'DM Mono', monospace; font-size: 11px; color: var(--slate); }
-  .results-table td { padding: 14px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px; cursor: pointer; }
-  .results-table tr:hover { background: rgba(255,255,255,0.03); }
-
-  /* ── Slide Panel ── */
-  .slide-panel {
-    position: fixed; top: 0; right: -500px; width: 480px; height: 100%;
-    background: var(--navy-mid); z-index: 200; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: -10px 0 30px rgba(0,0,0,0.5); padding: 40px; overflow-y: auto;
+  input:focus, select:focus {
+    border-color: var(--blue);
+    background: rgba(37,99,235,0.08);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
   }
-  .slide-panel.open { right: 0; }
 
-  /* Re-using existing form styles from previous version */
-  .form-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 24px; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  input, select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; color: white; width: 100%; }
-  label { font-size: 10px; color: var(--slate); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px; }
+  .phase2-input:focus {
+    border-color: var(--teal);
+    background: rgba(13,148,136,0.08);
+    box-shadow: 0 0 0 3px rgba(13,148,136,0.15);
+  }
 
-  /* ── About Section ── */
-  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 32px; }
-  .stack-tag { display: inline-block; padding: 4px 12px; background: rgba(37,99,235,0.1); border: 1px solid var(--blue); border-radius: 4px; font-size: 12px; margin: 4px; }
+  select option { background: var(--navy-mid); color: white; }
 
+  .score-input-group { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+
+  .score-badge {
+    background: rgba(37,99,235,0.15); border: 1px solid rgba(37,99,235,0.3);
+    border-radius: 8px; padding: 10px 14px;
+    font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500;
+    color: var(--blue-light); min-width: 52px; text-align: center;
+  }
+
+  .score-badge.teal { background: rgba(13,148,136,0.15); border-color: rgba(13,148,136,0.3); color: #2DD4BF; }
+
+  input[type="range"] { padding: 0; height: 4px; background: rgba(255,255,255,0.1); border: none; border-radius: 2px; cursor: pointer; accent-color: var(--blue); }
+  input[type="range"].teal-range { accent-color: var(--teal); }
+
+  .phase2-note {
+    background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2);
+    border-radius: 10px; padding: 10px 14px;
+    font-size: 12px; color: #5EEAD4; margin-bottom: 16px; line-height: 1.5;
+  }
+
+  .submit-btn {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--blue), var(--teal));
+    border: none; border-radius: 12px; color: white;
+    font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 600;
+    cursor: pointer; transition: all 0.3s; margin-top: 8px;
+    letter-spacing: 0.3px;
+  }
+
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .btn-loader {
+    display: none; width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+    border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ── Results ── */
+  .results-panel {
+    position: sticky; top: 24px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .results-empty {
+    background: rgba(255,255,255,0.03);
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 20px; padding: 48px 32px; text-align: center;
+  }
+
+  .results-empty-icon { font-size: 40px; margin-bottom: 16px; opacity: 0.4; }
+  .results-empty p { color: var(--slate); font-size: 14px; line-height: 1.6; }
+
+  .score-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px; padding: 28px;
+    display: none; animation: fadeIn 0.4s ease;
+  }
+
+  .score-card.visible { display: block; }
+
+  .overall-section { text-align: center; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .overall-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--slate); margin-bottom: 12px; }
+
+  .overall-score-ring { position: relative; width: 120px; height: 120px; margin: 0 auto 16px; }
+  .overall-score-ring svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 8; }
+  .ring-fg { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+
+  .score-number { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .score-value  { font-family: 'DM Serif Display', serif; font-size: 32px; line-height: 1; color: white; }
+  .score-max    { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--slate); margin-top: 2px; }
+
+  .overall-tier-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 20px; border-radius: 24px;
+    font-size: 14px; font-weight: 600; letter-spacing: 0.3px;
+  }
+
+  .tier-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .tier-low  { background: var(--low-bg);  color: var(--low);  }
+  .tier-med  { background: var(--med-bg);  color: var(--med);  }
+  .tier-high { background: var(--high-bg); color: var(--high); }
+  .dot-low   { background: var(--low);  }
+  .dot-med   { background: var(--med);  }
+  .dot-high  { background: var(--high); }
+
+  /* ── Cohort banner ── */
+  .cohort-banner {
+    background: rgba(37,99,235,0.08);
+    border: 1px solid rgba(37,99,235,0.2);
+    border-radius: 10px; padding: 12px 16px;
+    margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .cohort-percentile {
+    font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--blue-light);
+  }
+
+  .cohort-text { font-size: 12px; color: var(--slate); line-height: 1.4; max-width: 240px; }
+  .cohort-label { font-size: 11px; font-weight: 600; color: var(--blue-light); font-family: 'DM Mono', monospace; letter-spacing: 1px; }
+
+  /* ── Prediction rows ── */
+  .predictions-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+
+  .prediction-row {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px; padding: 16px;
+  }
+
+  .prediction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .prediction-name   { font-size: 13px; font-weight: 600; color: var(--slate-light); letter-spacing: 0.2px; }
+  .prediction-tier   { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px; letter-spacing: 0.3px; }
+
+  .prediction-bar-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+  .prediction-bar-fill  { height: 100%; border-radius: 2px; transition: width 1s ease; }
+  .bar-low  { background: linear-gradient(90deg, var(--low), #34D399); }
+  .bar-med  { background: linear-gradient(90deg, var(--med), #FCD34D); }
+  .bar-high { background: linear-gradient(90deg, var(--high), #F87171); }
+
+  .prediction-meta { display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--slate); margin-bottom: 8px; }
+
+  /* ── SHAP factors ── */
+  .shap-factors { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); }
+
+  .shap-title {
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--slate); margin-bottom: 6px;
+  }
+
+  .shap-factor {
+    font-size: 11px; color: var(--slate-light);
+    padding: 3px 0; line-height: 1.5;
+  }
+
+  .shap-positive { color: #34D399; font-weight: 600; }
+  .shap-negative { color: #F87171; font-weight: 600; }
+
+  /* ── Candidate info ── */
+  .candidate-info {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px; padding: 16px; display: none;
+  }
+
+  .candidate-info.visible { display: block; animation: fadeIn 0.4s ease; }
+
+  .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: var(--slate); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.5px; }
+  .info-value { color: var(--slate-light); font-weight: 500; }
+
+  /* ── AI Summary card ── */
+  .ai-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 20px; display: none;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .ai-card.visible { display: block; }
+
+  .ai-card-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .ai-gem {
+    width: 24px; height: 24px;
+    background: linear-gradient(135deg, #4285f4, #0d9488);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+
+  .ai-card-title { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--blue-light); }
+
+  .ai-summary-text { font-size: 13px; color: var(--slate-light); line-height: 1.65; }
+
+  /* ── Onboarding plan ── */
+  .plan-section { margin-top: 16px; }
+
+  .plan-toggle {
+    width: 100%; padding: 10px 16px;
+    background: rgba(13,148,136,0.1);
+    border: 1px solid rgba(13,148,136,0.25);
+    border-radius: 10px; color: #2DD4BF;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; text-align: left;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .plan-toggle:hover { background: rgba(13,148,136,0.18); }
+
+  .plan-content {
+    display: none; margin-top: 12px;
+    background: rgba(13,148,136,0.05);
+    border: 1px solid rgba(13,148,136,0.15);
+    border-radius: 10px; padding: 16px;
+  }
+
+  .plan-content.visible { display: block; animation: fadeIn 0.3s ease; }
+
+  .plan-text { font-size: 13px; color: var(--slate-light); line-height: 1.7; white-space: pre-line; }
+
+  /* ── AI loading state ── */
+  .ai-loading {
+    display: none; align-items: center; gap: 10px;
+    padding: 16px; background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+  }
+
+  .ai-loading.visible { display: flex; }
+
+  .ai-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(37,99,235,0.3);
+    border-top-color: var(--blue-light);
+    border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;
+  }
+
+  .ai-loading-text { font-size: 12px; color: var(--slate); font-family: 'DM Mono', monospace; }
+
+  /* ── Compare results ── */
+  .compare-results {
+    display: none; margin-top: 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 20px;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .compare-results.visible { display: block; }
+
+  .compare-winner {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px; padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .winner-badge {
+    background: linear-gradient(135deg, var(--blue), var(--teal));
+    border-radius: 10px; padding: 8px 16px;
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+  }
+
+  .winner-label { font-size: 12px; color: var(--slate); }
+
+  .compare-commentary { font-size: 13px; color: var(--slate-light); line-height: 1.7; white-space: pre-line; }
+
+  /* ── Error ── */
+  .error-card {
+    background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.2);
+    border-radius: 12px; padding: 16px; color: #FCA5A5;
+    font-size: 13px; display: none; animation: fadeIn 0.3s ease;
+  }
+
+  .error-card.visible { display: block; }
+
+  footer {
+    position: relative; z-index: 10; text-align: center; padding: 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    color: var(--slate); font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.5px;
+  }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; padding: 0 24px 60px; }
+    .main.compare-mode { grid-template-columns: 1fr; }
+    header { padding: 20px 24px; }
+    .hero  { padding: 48px 24px 32px; }
+    .results-panel { position: static; }
+    #compareWinnerWrapper { padding: 0 24px 40px !important; }
+  }
 </style>
 </head>
 <body>
 
-<nav>
-  <div class="logo" style="display:flex; align-items:center; gap:12px;">
-    <div style="background:linear-gradient(135deg, var(--blue), var(--teal)); width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:bold;">S3</div>
-    <span style="font-family:'DM Serif Display',serif; font-size:20px;">Sorvex 360</span>
-  </div>
-  <div class="nav-links">
-    <a href="#" onclick="showSection('home')" class="active">Home</a>
-    <a href="#" onclick="showSection('upload')">Upload</a>
-    <a href="#" onclick="toggleCompareMode()">Compare</a>
-    <a href="#" onclick="showSection('about')">About</a>
-  </div>
-</nav>
-
-<div id="home" class="section-container active">
-  <div class="hero">
-    <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--blue-light); letter-spacing:3px; margin-bottom:16px;">UTILITY WORKFORCE PREDICTION PIPELINE</div>
-    <h1>Predict Candidate Risk Before Day One</h1>
-    <p>Leverage AI-powered risk intelligence to identify retention trends, safety likelihood, and promotion potential across your utility workforce.</p>
-  </div>
-
-  <div class="main" id="mainGrid">
-    <div class="action-bar" id="unifiedAction" style="display:none">
-        <button class="compare-main-btn" onclick="runPrediction()">Compare Candidates</button>
+<header>
+  <div class="logo">
+    <div class="logo-mark">S3</div>
+    <div>
+      <div class="logo-text">Sorvex 360</div>
+      <div class="logo-sub">Workforce Risk Intelligence</div>
     </div>
+  </div>
+  <div class="header-right">
+    <div class="compare-toggle" id="compareToggle" onclick="toggleCompareMode()">
+      <span class="toggle-dot"></span>
+      Compare Mode
+    </div>
+    <div class="header-badge">API Connected · v2.0</div>
+  </div>
+</header>
 
-    <div class="candidate-column">
-      <div id="labelA" style="display:none; color:var(--blue-light); font-family:'DM Mono',monospace; margin-bottom:8px;">⬤ CANDIDATE A</div>
-      <div class="form-card" id="formA">
+<div class="hero">
+  <div class="hero-eyebrow">Utility Workforce Prediction Pipeline</div>
+  <h1>Predict Candidate Risk<br><em>Before Day One</em></h1>
+  <p>Enter a candidate profile to receive AI-powered predictions for retention risk, safety likelihood, and promotion potential across 6 utility SOC codes.</p>
+</div>
+
+
+<div class="main" id="mainGrid">
+
+  <!-- ── COLUMN A ── -->
+  <div class="candidate-column col-a">
+    <div class="compare-label-bar a">⬤ Candidate A</div>
+    <div class="form-card">
+      <div class="form-section">
+        <div class="form-section-title">01 — Role & Demographics</div>
         <div class="form-grid">
-          <div style="grid-column: 1/-1;">
-            <label>Role</label>
+          <div class="form-group full">
+            <label>SOC Code / Role</label>
             <select id="SOC_Code">
-              <option value="49-9051.00">Power Line Installer/Repairer</option>
-              <option value="49-2022.00">Telecom Equipment Installer</option>
-              <option value="51-8013.00">Power Plant Operator</option>
-              <option value="51-8031.00">Water/Wastewater Treatment Operator</option>
-              <option value="51-8092.00">Gas Plant Operator</option>
-              <option value="43-5041.00">Meter Reader</option>
+              <option value="49-9051.00">49-9051.00 — Power Line Installer/Repairer</option>
+              <option value="49-2022.00">49-2022.00 — Telecom Equipment Installer</option>
+              <option value="51-8013.00">51-8013.00 — Power Plant Operator</option>
+              <option value="51-8031.00">51-8031.00 — Water/Wastewater Treatment Operator</option>
+              <option value="51-8092.00">51-8092.00 — Gas Plant Operator</option>
+              <option value="43-5041.00">43-5041.00 — Meter Reader, Utilities</option>
             </select>
           </div>
-          <div><label>Age</label><input type="number" id="Age" value="28"></div>
-          <div><label>State</label><select id="State" class="state-select"></select></div>
+          <div class="form-group"><label>Age</label><input type="number" id="Age" value="35" min="18" max="65"></div>
+          <div class="form-group"><label>Gender</label><select id="Gender"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div>
+          <div class="form-group"><label>State</label><select id="State"><option value="TX">TX</option><option value="CA">CA</option><option value="VA">VA</option><option value="NC">NC</option><option value="WA">WA</option><option value="FL">FL</option><option value="IL">IL</option><option value="PA">PA</option><option value="MI">MI</option><option value="Other">Other</option></select></div>
+          <div class="form-group"><label>Education Level</label><select id="EducationLevel"><option value="HS/GED">HS / GED</option><option value="Vocational Certificate">Vocational Certificate</option><option value="Associate Technical" selected>Associate Technical</option><option value="Associate General">Associate General</option><option value="Bachelor's">Bachelor's</option><option value="Apprenticeship">Apprenticeship</option></select></div>
         </div>
-        <button class="nav-btn" id="singleBtn" style="width:100%; margin-top:20px; padding:12px;" onclick="runPrediction()">Analyze Candidate</button>
       </div>
-      <div id="resultsA"></div>
+      <div class="form-section">
+        <div class="form-section-title">02 — Assessment Scores (50–100)</div>
+        <div class="form-grid">
+          <div class="form-group full"><label>Cognitive Score</label><div class="score-input-group"><input type="range" id="CognitiveScore" min="50" max="100" value="72" oninput="updateBadge('CognitiveScore','cog-badge')"><div class="score-badge" id="cog-badge">72</div></div></div>
+          <div class="form-group full"><label>Behavioral Score</label><div class="score-input-group"><input type="range" id="BehavioralScore" min="50" max="100" value="68" oninput="updateBadge('BehavioralScore','beh-badge')"><div class="score-badge" id="beh-badge">68</div></div></div>
+          <div class="form-group full"><label>Situational Score</label><div class="score-input-group"><input type="range" id="SituationalScore" min="50" max="100" value="67" oninput="updateBadge('SituationalScore','sit-badge')"><div class="score-badge" id="sit-badge">67</div></div></div>
+          <div class="form-group full"><label>Simulation Score</label><div class="score-input-group"><input type="range" id="SimulationScore" min="50" max="100" value="70" oninput="updateBadge('SimulationScore','sim-badge')"><div class="score-badge" id="sim-badge">70</div></div></div>
+          <div class="form-group full"><label>Sorvex 360 PI Score</label><div class="score-input-group"><input type="range" id="Sorvex360PI_Score" min="0" max="100" value="66" step="0.5" oninput="updateBadge('Sorvex360PI_Score','pi-badge')"><div class="score-badge" id="pi-badge">66</div></div></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">03 — Work History & Eligibility</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Longest Job Tenure (yrs)</label><input type="number" id="LongestJobTenure" value="4.5" step="0.5" min="0"></div>
+          <div class="form-group"><label>Most Recent Industry</label><select id="MostRecentIndustry"><option value="Construction" selected>Construction</option><option value="Utility">Utility</option><option value="Manufacturing">Manufacturing</option><option value="Military">Military</option><option value="Other">Other</option></select></div>
+          <div class="form-group"><label>Prior Trade Experience</label><select id="HasPriorTradeExperience"><option value="1">Yes</option><option value="0">No</option></select></div>
+          <div class="form-group"><label>Valid License</label><select id="HasValidLicense"><option value="1">Yes</option><option value="0">No</option></select></div>
+          <div class="form-group"><label>Can Pass Drug Screen</label><select id="CanPassDrugScreen"><option value="1">Yes</option><option value="0">No</option></select></div>
+          <div class="form-group"><label>Can Pass Background Check</label><select id="CanPassBackgroundCheck"><option value="1">Yes</option><option value="0">No</option></select></div>
+          <div class="form-group"><label>Veteran Status</label><select id="VeteranStatus"><option value="0">No</option><option value="1">Yes</option></select></div>
+          <div class="form-group"><label>CDL Status</label><select id="CDL_Status"><option value="0">No</option><option value="1">Yes</option></select></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">04 — Source & Training</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Training Source</label><select id="TrainingSource"><option value="IBEW JATC">IBEW JATC</option><option value="Trade Union">Trade Union</option><option value="Community College">Community College</option><option value="Employer Program">Employer Program</option><option value="Military">Military</option><option value="Self-taught">Self-taught</option></select></div>
+          <div class="form-group"><label>Source of Candidate</label><select id="SourceOfCandidate"><option value="WorkforceProgram">Workforce Program</option><option value="SelfReferred">Self Referred</option><option value="TradeUnion">Trade Union</option><option value="MilitaryTransition">Military Transition</option><option value="CommunityCollege">Community College</option><option value="Other">Other</option></select></div>
+          <div class="form-group"><label>Apprenticeship Interest</label><select id="ApprenticeshipInterest"><option value="1">Yes</option><option value="0">No</option></select></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title phase2">05 — Training Program Outcomes</div>
+        <div class="phase2-note">📋 Primary drivers of Promotion and Safety predictions.</div>
+        <div class="form-grid">
+          <div class="form-group full"><label class="phase2-label">Attendance Rate</label><div class="score-input-group"><input type="range" class="teal-range" id="AttendanceRate" min="50" max="99" value="80" oninput="updateBadgeDecimal('AttendanceRate','att-badge')"><div class="score-badge teal" id="att-badge">0.80</div></div></div>
+          <div class="form-group full"><label class="phase2-label">Safety Commitment Score (1–5)</label><div class="score-input-group"><input type="range" class="teal-range" id="SafetyCommitmentScore" min="10" max="50" value="30" oninput="updateBadgeDecimal('SafetyCommitmentScore','safety-badge')"><div class="score-badge teal" id="safety-badge">3.0</div></div></div>
+          <div class="form-group"><label class="phase2-label">Total Training Hours</label><input type="number" class="phase2-input" id="TotalTrainingHours" value="6400" min="500" max="10000" step="100"></div>
+          <div class="form-group"><label class="phase2-label">Certifications Earned</label><input type="number" class="phase2-input" id="CertificationsEarned" value="2" min="0" max="6"></div>
+          <div class="form-group"><label class="phase2-label">Passed Required Modules</label><select class="phase2-input" id="PassedRequiredModules"><option value="1">Yes</option><option value="0">No</option></select></div>
+          <div class="form-group"><label class="phase2-label">Physical Test Result</label><select class="phase2-input" id="PhysicalTestResult"><option value="1">Pass</option><option value="0">Fail</option></select></div>
+          <div class="form-group"><label class="phase2-label">Union Status</label><select class="phase2-input" id="UnionStatus"><option value="0">No</option><option value="1">Yes</option></select></div>
+          <div class="form-group"><label class="phase2-label">Apprenticeship Registered</label><select class="phase2-input" id="Apprenticeship_Registered"><option value="0">No</option><option value="1">Yes</option></select></div>
+        </div>
+      </div>
+      <button class="submit-btn" id="submitBtn" onclick="runPrediction()">
+        <span id="btnText">Run Risk Prediction</span>
+        <div class="btn-loader" id="btnLoader"></div>
+      </button>
     </div>
 
-    <div class="candidate-column" id="colB" style="display:none">
-      <div style="color:#a78bfa; font-family:'DM Mono',monospace; margin-bottom:8px;">⬤ CANDIDATE B</div>
-      <div class="form-card">
-         <div class="form-grid">
-          <div style="grid-column: 1/-1;">
-            <label>Role</label>
-            <select id="B_SOC_Code">
-              <option value="49-9051.00">Power Line Installer/Repairer</option>
-              <option value="49-2022.00">Telecom Equipment Installer</option>
-              <option value="51-8013.00">Power Plant Operator</option>
-            </select>
+    <!-- Results A -->
+    <div id="resultsA">
+      <div class="results-empty" id="emptyState">
+        <div class="results-empty-icon">⚡</div>
+        <p>Fill in the candidate profile and click <strong>Run Risk Prediction</strong> to see AI-powered risk scores.</p>
+      </div>
+      <div class="score-card" id="scoreCard">
+        <div class="overall-section">
+          <div class="overall-label">Overall Composite Score</div>
+          <div class="overall-score-ring">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle class="ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="52" stroke="#2563EB" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+            </svg>
+            <div class="score-number">
+              <div class="score-value" id="overallScoreVal">--</div>
+              <div class="score-max">/ 100</div>
+            </div>
           </div>
-          <div><label>Age</label><input type="number" id="B_Age" value="32"></div>
-          <div><label>State</label><select id="B_State" class="state-select"></select></div>
+          <div id="overallTierBadge" class="overall-tier-badge tier-med">
+            <span class="tier-dot dot-med"></span>
+            <span>Analyzing...</span>
+          </div>
+        </div>
+        <div class="cohort-banner" id="cohortBanner" style="display:none">
+          <div>
+            <div class="cohort-label">Cohort Ranking</div>
+            <div class="cohort-text" id="cohortText">—</div>
+          </div>
+          <div class="cohort-percentile" id="cohortPct">—</div>
+        </div>
+        <div class="predictions-list" id="predictionsList"></div>
+      </div>
+      <div class="candidate-info" id="candidateInfo">
+        <div class="form-section-title" style="margin-bottom:12px">Candidate Summary</div>
+        <div id="candidateInfoRows"></div>
+      </div>
+      <div class="ai-loading" id="aiLoading">
+        <div class="ai-spinner"></div>
+        <div class="ai-loading-text">Gemini is analyzing this candidate...</div>
+      </div>
+      <div class="ai-card" id="aiSummaryCard">
+        <div class="ai-card-header">
+          <div class="ai-gem">✦</div>
+          <div class="ai-card-title">AI Candidate Summary</div>
+        </div>
+        <div class="ai-summary-text" id="aiSummaryText"></div>
+        <div class="plan-section">
+          <button class="plan-toggle" id="planToggle" onclick="togglePlan()">
+            <span>90-Day Onboarding Plan</span>
+            <span id="planArrow">▼</span>
+          </button>
+          <div class="plan-content" id="planContent">
+            <div class="plan-text" id="planText"></div>
+          </div>
         </div>
       </div>
-      <div id="resultsB"></div>
+      <div class="error-card" id="errorCard">
+        <strong>⚠ Prediction Error</strong><br>
+        <span id="errorMsg">Unable to connect to prediction service.</span>
+      </div>
     </div>
   </div>
-</div>
 
-<div id="upload" class="section-container" style="max-width:1200px; margin:0 auto; padding:100px 48px;">
-    <div class="batch-card">
-        <h2 style="font-family:'DM Serif Display'; font-size:32px; margin-bottom:8px;">Batch Prediction</h2>
-        <p style="color:var(--slate); margin-bottom:24px;">Upload a CSV or Excel file. Our engine will auto-clean and normalize your data.</p>
-        
-        <div style="border:2px dashed rgba(255,255,255,0.1); padding:40px; text-align:center; border-radius:12px;">
-            <input type="file" id="fileUpload" accept=".csv, .xlsx" style="display:none" onchange="handleFileUpload(event)">
-            <button class="compare-main-btn" onclick="document.getElementById('fileUpload').click()">Choose File</button>
-            <p id="fileStatus" style="margin-top:12px; font-size:12px; color:var(--slate);"></p>
+  <!-- ── COLUMN B (compare mode only) ── -->
+  <div class="candidate-column col-b">
+    <div class="compare-label-bar b">⬤ Candidate B</div>
+    <div class="form-card">
+      <div class="form-section">
+        <div class="form-section-title">01 — Role & Demographics</div>
+        <div class="form-grid">
+          <div class="form-group full"><label>SOC Code / Role</label><select id="B_SOC_Code"><option value="49-9051.00">49-9051.00 — Power Line Installer/Repairer</option><option value="49-2022.00">49-2022.00 — Telecom Equipment Installer</option><option value="51-8013.00" selected>51-8013.00 — Power Plant Operator</option><option value="51-8031.00">51-8031.00 — Water/Wastewater Treatment Operator</option><option value="51-8092.00">51-8092.00 — Gas Plant Operator</option><option value="43-5041.00">43-5041.00 — Meter Reader, Utilities</option></select></div>
+          <div class="form-group"><label>Age</label><input type="number" id="B_Age" value="29" min="18" max="65"></div>
+          <div class="form-group"><label>Gender</label><select id="B_Gender"><option value="Male">Male</option><option value="Female" selected>Female</option><option value="Other">Other</option></select></div>
+          <div class="form-group"><label>State</label><select id="B_State"><option value="TX">TX</option><option value="CA" selected>CA</option><option value="VA">VA</option><option value="NC">NC</option><option value="WA">WA</option><option value="FL">FL</option><option value="IL">IL</option><option value="PA">PA</option><option value="MI">MI</option><option value="Other">Other</option></select></div>
+          <div class="form-group"><label>Education Level</label><select id="B_EducationLevel"><option value="HS/GED">HS / GED</option><option value="Vocational Certificate">Vocational Certificate</option><option value="Associate Technical">Associate Technical</option><option value="Associate General">Associate General</option><option value="Bachelor's" selected>Bachelor's</option><option value="Apprenticeship">Apprenticeship</option></select></div>
         </div>
-
-        <table class="results-table" id="batchTable" style="display:none">
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Candidate</th>
-                    <th>Role</th>
-                    <th>Composite Score</th>
-                    <th>Risk Tier</th>
-                </tr>
-            </thead>
-            <tbody id="batchBody"></tbody>
-        </table>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">02 — Assessment Scores (50–100)</div>
+        <div class="form-grid">
+          <div class="form-group full"><label>Cognitive Score</label><div class="score-input-group"><input type="range" id="B_CognitiveScore" min="50" max="100" value="78" oninput="updateBadge('B_CognitiveScore','B_cog-badge')"><div class="score-badge" id="B_cog-badge">78</div></div></div>
+          <div class="form-group full"><label>Behavioral Score</label><div class="score-input-group"><input type="range" id="B_BehavioralScore" min="50" max="100" value="74" oninput="updateBadge('B_BehavioralScore','B_beh-badge')"><div class="score-badge" id="B_beh-badge">74</div></div></div>
+          <div class="form-group full"><label>Situational Score</label><div class="score-input-group"><input type="range" id="B_SituationalScore" min="50" max="100" value="73" oninput="updateBadge('B_SituationalScore','B_sit-badge')"><div class="score-badge" id="B_sit-badge">73</div></div></div>
+          <div class="form-group full"><label>Simulation Score</label><div class="score-input-group"><input type="range" id="B_SimulationScore" min="50" max="100" value="75" oninput="updateBadge('B_SimulationScore','B_sim-badge')"><div class="score-badge" id="B_sim-badge">75</div></div></div>
+          <div class="form-group full"><label>Sorvex 360 PI Score</label><div class="score-input-group"><input type="range" id="B_Sorvex360PI_Score" min="0" max="100" value="72" step="0.5" oninput="updateBadge('B_Sorvex360PI_Score','B_pi-badge')"><div class="score-badge" id="B_pi-badge">72</div></div></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">03 — Work History & Eligibility</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Longest Job Tenure (yrs)</label><input type="number" id="B_LongestJobTenure" value="2.5" step="0.5" min="0"></div>
+          <div class="form-group"><label>Most Recent Industry</label><select id="B_MostRecentIndustry"><option value="Construction">Construction</option><option value="Utility" selected>Utility</option><option value="Manufacturing">Manufacturing</option><option value="Military">Military</option><option value="Other">Other</option></select></div>
+          <div class="form-group"><label>Prior Trade Experience</label><select id="B_HasPriorTradeExperience"><option value="1">Yes</option><option value="0" selected>No</option></select></div>
+          <div class="form-group"><label>Valid License</label><select id="B_HasValidLicense"><option value="1">Yes</option><option value="0">No</option></select></div>
+          <div class="form-group"><label>Can Pass Drug Screen</label><select id="B_CanPassDrugScreen"><option value="1">Yes</option><option value="0">No</option></select></div>
+          <div class="form-group"><label>Can Pass Background Check</label><select id="B_CanPassBackgroundCheck"><option value="1">Yes</option><option value="0">No</option></select></div>
+          <div class="form-group"><label>Veteran Status</label><select id="B_VeteranStatus"><option value="0">No</option><option value="1">Yes</option></select></div>
+          <div class="form-group"><label>CDL Status</label><select id="B_CDL_Status"><option value="0">No</option><option value="1">Yes</option></select></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">04 — Source & Training</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Training Source</label><select id="B_TrainingSource"><option value="IBEW JATC">IBEW JATC</option><option value="Trade Union">Trade Union</option><option value="Community College" selected>Community College</option><option value="Employer Program">Employer Program</option><option value="Military">Military</option><option value="Self-taught">Self-taught</option></select></div>
+          <div class="form-group"><label>Source of Candidate</label><select id="B_SourceOfCandidate"><option value="WorkforceProgram">Workforce Program</option><option value="SelfReferred" selected>Self Referred</option><option value="TradeUnion">Trade Union</option><option value="MilitaryTransition">Military Transition</option><option value="CommunityCollege">Community College</option><option value="Other">Other</option></select></div>
+          <div class="form-group"><label>Apprenticeship Interest</label><select id="B_ApprenticeshipInterest"><option value="1" selected>Yes</option><option value="0">No</option></select></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title phase2">05 — Training Program Outcomes</div>
+        <div class="phase2-note">📋 Primary drivers of Promotion and Safety predictions.</div>
+        <div class="form-grid">
+          <div class="form-group full"><label class="phase2-label">Attendance Rate</label><div class="score-input-group"><input type="range" class="teal-range" id="B_AttendanceRate" min="50" max="99" value="88" oninput="updateBadgeDecimal('B_AttendanceRate','B_att-badge')"><div class="score-badge teal" id="B_att-badge">0.88</div></div></div>
+          <div class="form-group full"><label class="phase2-label">Safety Commitment Score (1–5)</label><div class="score-input-group"><input type="range" class="teal-range" id="B_SafetyCommitmentScore" min="10" max="50" value="40" oninput="updateBadgeDecimal('B_SafetyCommitmentScore','B_safety-badge')"><div class="score-badge teal" id="B_safety-badge">4.0</div></div></div>
+          <div class="form-group"><label class="phase2-label">Total Training Hours</label><input type="number" class="phase2-input" id="B_TotalTrainingHours" value="5200" min="500" max="10000" step="100"></div>
+          <div class="form-group"><label class="phase2-label">Certifications Earned</label><input type="number" class="phase2-input" id="B_CertificationsEarned" value="3" min="0" max="6"></div>
+          <div class="form-group"><label class="phase2-label">Passed Required Modules</label><select class="phase2-input" id="B_PassedRequiredModules"><option value="1" selected>Yes</option><option value="0">No</option></select></div>
+          <div class="form-group"><label class="phase2-label">Physical Test Result</label><select class="phase2-input" id="B_PhysicalTestResult"><option value="1" selected>Pass</option><option value="0">Fail</option></select></div>
+          <div class="form-group"><label class="phase2-label">Union Status</label><select class="phase2-input" id="B_UnionStatus"><option value="0">No</option><option value="1" selected>Yes</option></select></div>
+          <div class="form-group"><label class="phase2-label">Apprenticeship Registered</label><select class="phase2-input" id="B_Apprenticeship_Registered"><option value="0">No</option><option value="1" selected>Yes</option></select></div>
+        </div>
+      </div>
     </div>
-</div>
 
-<div id="about" class="section-container" style="max-width:900px; margin:0 auto; padding:100px 48px;">
-    <h2 style="font-family:'DM Serif Display'; font-size:40px;">About Sorvex 360</h2>
-    <div class="about-grid">
-        <div>
-            <h3 style="color:var(--blue-light); margin-bottom:12px;">The Project</h3>
-            <p style="color:var(--slate); line-height:1.6;">Sorvex 360 is a workforce risk intelligence platform designed for the utility sector. It uses machine learning to analyze assessment scores, training performance, and demographic data to predict operational risks before hiring decisions are finalized.</p>
+    <!-- Results B -->
+    <div id="resultsB">
+      <div class="results-empty" id="emptyStateB">
+        <div class="results-empty-icon">⚡</div>
+        <p>Click <strong>Compare Candidates</strong> to see Candidate B's risk scores.</p>
+      </div>
+      <div class="score-card" id="scoreCardB">
+        <div class="overall-section">
+          <div class="overall-label">Overall Composite Score</div>
+          <div class="overall-score-ring">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle class="ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="ring-fg" id="ringFgB" cx="60" cy="60" r="52" stroke="#8B5CF6" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+            </svg>
+            <div class="score-number">
+              <div class="score-value" id="overallScoreValB">--</div>
+              <div class="score-max">/ 100</div>
+            </div>
+          </div>
+          <div id="overallTierBadgeB" class="overall-tier-badge tier-med">
+            <span class="tier-dot dot-med"></span>
+            <span>Analyzing...</span>
+          </div>
         </div>
-        <div>
-            <h3 style="color:var(--teal); margin-bottom:12px;">Tech Stack</h3>
-            <div class="stack-tag">Python (FastAPI)</div>
-            <div class="stack-tag">Scikit-Learn</div>
-            <div class="stack-tag">XGBoost</div>
-            <div class="stack-tag">Google Gemini Pro</div>
-            <div class="stack-tag">Vanilla JS / CSS3</div>
+        <div class="cohort-banner" id="cohortBannerB" style="display:none">
+          <div>
+            <div class="cohort-label">Cohort Ranking</div>
+            <div class="cohort-text" id="cohortTextB">—</div>
+          </div>
+          <div class="cohort-percentile" id="cohortPctB">—</div>
         </div>
+        <div class="predictions-list" id="predictionsListB"></div>
+      </div>
+      <div class="candidate-info" id="candidateInfoB">
+        <div class="form-section-title" style="margin-bottom:12px">Candidate Summary</div>
+        <div id="candidateInfoRowsB"></div>
+      </div>
     </div>
+  </div>
+
 </div>
 
-<div id="detailPanel" class="slide-panel">
-    <button onclick="closePanel()" style="background:none; border:none; color:white; cursor:pointer; margin-bottom:20px;">✕ Close</button>
-    <div id="panelContent"></div>
+<!-- Compare winner card — spans full width below both columns -->
+<div style="position:relative;z-index:10;max-width:1500px;margin:0 auto;padding:0 48px 40px;display:none" id="compareWinnerWrapper">
+  <div class="compare-winner-card" id="compareWinnerCard">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:24px;height:24px;background:linear-gradient(135deg,#4285f4,#0d9488);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px">⚖</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue-light)">AI Hiring Recommendation</div>
+    </div>
+    <div id="compareWinnerBadge" style="margin-bottom:12px"></div>
+    <div class="compare-commentary" id="compareCommentary"></div>
+  </div>
 </div>
 
 <script>
-  let compareMode = false;
   const API_BASE = 'https://sorvex360-predict-839675931790.us-central1.run.app';
+  let compareMode = false;
+  let planVisible = false;
 
-  // 1. Populate States
-  const states = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];
-  document.querySelectorAll('.state-select').forEach(sel => {
-    states.forEach(s => sel.innerHTML += `<option value="${s}">${s}</option>`);
-  });
+  function updateBadge(inputId, badgeId) {
+    document.getElementById(badgeId).textContent = document.getElementById(inputId).value;
+  }
 
-  // 2. Navigation Logic
-  function showSection(id) {
-    document.querySelectorAll('.section-container').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-    event.target.classList.add('active');
+  function updateBadgeDecimal(inputId, badgeId) {
+    const val = parseInt(document.getElementById(inputId).value);
+    let display;
+    if (inputId.includes('AttendanceRate'))        display = (val / 100).toFixed(2);
+    else if (inputId.includes('SafetyCommitment')) display = (val / 10).toFixed(1);
+    document.getElementById(badgeId).textContent = display;
+  }
+
+  function getAttendance(prefix='') {
+    return parseInt(document.getElementById(prefix + 'AttendanceRate').value) / 100;
+  }
+
+  function getSafety(prefix='') {
+    return parseInt(document.getElementById(prefix + 'SafetyCommitmentScore').value) / 10;
   }
 
   function toggleCompareMode() {
     compareMode = !compareMode;
-    document.getElementById('colB').style.display = compareMode ? 'block' : 'none';
-    document.getElementById('labelA').style.display = compareMode ? 'block' : 'none';
-    document.getElementById('singleBtn').style.display = compareMode ? 'none' : 'block';
-    document.getElementById('unifiedAction').style.display = compareMode ? 'flex' : 'none';
-    document.getElementById('mainGrid').classList.toggle('compare-mode', compareMode);
-    showSection('home');
-  }
+    const toggle  = document.getElementById('compareToggle');
+    const grid    = document.getElementById('mainGrid');
+    const btnTxt  = document.getElementById('btnText');
+    const wrapper = document.getElementById('compareWinnerWrapper');
 
-  // 3. Fuzzy Matching
-  function normalizeRole(str) {
-    const s = str.toLowerCase();
-    if (s.includes('line') || s.includes('wireman')) return '49-9051.00';
-    if (s.includes('tele') || s.includes('comm')) return '49-2022.00';
-    if (s.includes('plant') || s.includes('nuclear')) return '51-8013.00';
-    if (s.includes('water') || s.includes('waste')) return '51-8031.00';
-    if (s.includes('gas')) return '51-8092.00';
-    if (s.includes('meter')) return '43-5041.00';
-    return '49-9051.00'; // Default
-  }
+    toggle.classList.toggle('active', compareMode);
+    grid.classList.toggle('compare-mode', compareMode);
+    btnTxt.textContent = compareMode ? 'Compare Candidates' : 'Run Risk Prediction';
 
-  // 4. Batch Upload Handling
-  async function handleFileUpload(event) {
-    const file = event.target.files[0];
-    const reader = new FileReader();
-    
-    reader.onload = async (e) => {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, {type: 'array'});
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(firstSheet);
-        
-        document.getElementById('fileStatus').innerText = `Processing ${rows.length} candidates...`;
-        await processBatch(rows);
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  async function processBatch(rows) {
-    const results = [];
-    for (const row of rows) {
-        // Cleaning & Normalizing logic
-        const payload = {
-            SOC_Code: normalizeRole(row.Role || row.SOC || ""),
-            Age: parseInt(row.Age) || 30,
-            AttendanceRate: parseFloat(row.Attendance) || 0.85,
-            CognitiveScore: parseInt(row.Cognitive) || 70,
-            // ... add other mappings
-        };
-        
-        try {
-            const res = await fetch(`${API_BASE}/predict`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            results.push({ name: row.Name || 'Unknown', data: data });
-        } catch (err) { console.error(err); }
+    if (!compareMode) {
+      wrapper.style.display = 'none';
+      // Reset B results
+      document.getElementById('scoreCardB').classList.remove('visible');
+      document.getElementById('candidateInfoB').classList.remove('visible');
+      document.getElementById('emptyStateB').style.display = 'block';
     }
-    
-    renderBatchTable(results.sort((a,b) => b.data.candidate_summary.overall_score - a.data.candidate_summary.overall_score));
   }
 
-  function renderBatchTable(list) {
-    const tbody = document.getElementById('batchBody');
-    tbody.innerHTML = '';
-    list.forEach((item, index) => {
-        const s = item.data.candidate_summary;
-        tbody.innerHTML += `
-            <tr onclick="openDetail(${JSON.stringify(item.data).replace(/"/g, '&quot;')})">
-                <td>#${index+1}</td>
-                <td>${item.name}</td>
-                <td>${s.soc_code}</td>
-                <td style="font-weight:bold; color:var(--blue-light)">${s.overall_score.toFixed(1)}</td>
-                <td>${s.overall_tier}</td>
-            </tr>
-        `;
+  function setLoading(loading) {
+    const btn = document.getElementById('submitBtn');
+    const txt = document.getElementById('btnText');
+    const ldr = document.getElementById('btnLoader');
+    btn.disabled = loading;
+    txt.style.display = loading ? 'none' : 'block';
+    ldr.style.display = loading ? 'block' : 'none';
+  }
+
+  function tierClass(tier) {
+    if (tier === 'Low')    return 'low';
+    if (tier === 'Medium') return 'med';
+    return 'high';
+  }
+
+  function overallTierClass(tier) {
+    if (tier === 'Low Risk')    return 'low';
+    if (tier === 'Medium Risk') return 'med';
+    return 'high';
+  }
+
+  // Generate plain English SHAP explanation
+  function buildShapHTML(factors, outcomeKey) {
+    if (!factors || factors.length === 0) return '';
+
+    const sentences = factors.map(f => {
+      const val = f.raw_value;
+      const label = f.label;
+      const dir = f.direction; // 'increases' or 'decreases' the outcome probability
+
+      // For safety (OSHA incident), 'increases' means MORE risk, 'decreases' means LESS risk
+      // For retention, 'increases' means MORE likely to stay
+      // For promotion, 'increases' means MORE likely to be promoted
+      let sentence = '';
+      if (outcomeKey === 'safety') {
+        if (dir === 'decreases') {
+          sentence = `<span class="shap-positive">✓</span> ${label} reduces incident risk`;
+        } else {
+          sentence = `<span class="shap-negative">!</span> ${label} elevates incident risk`;
+        }
+      } else if (outcomeKey === 'retention') {
+        if (dir === 'increases') {
+          sentence = `<span class="shap-positive">✓</span> ${label} supports retention`;
+        } else {
+          sentence = `<span class="shap-negative">!</span> ${label} is a retention risk factor`;
+        }
+      } else { // promotion
+        if (dir === 'increases') {
+          sentence = `<span class="shap-positive">✓</span> ${label} supports promotion likelihood`;
+        } else {
+          sentence = `<span class="shap-negative">!</span> ${label} may limit promotion`;
+        }
+      }
+      return `<div class="shap-factor">${sentence}</div>`;
+    }).join('');
+
+    return `<div class="shap-factors"><div class="shap-title">Key Factors</div>${sentences}</div>`;
+  }
+
+  function buildPayload(prefix='') {
+    const p = prefix;
+    const att = getAttendance(p);
+    const safety = getSafety(p);
+    const piScore = parseFloat(document.getElementById(p + 'Sorvex360PI_Score').value);
+    const simScore = parseInt(document.getElementById(p + 'SimulationScore').value);
+    const trainHrs = parseInt(document.getElementById(p + 'TotalTrainingHours').value);
+    const readinessDelta = parseFloat(((att - 0.75) * 20 + (piScore - 65) * 0.2).toFixed(1));
+
+    return {
+      SOC_Code:                String(document.getElementById(p + 'SOC_Code').value),
+      Age:                     parseInt(document.getElementById(p + 'Age').value),
+      Gender:                  String(document.getElementById(p + 'Gender').value),
+      State:                   String(document.getElementById(p + 'State').value),
+      EducationLevel:          String(document.getElementById(p + 'EducationLevel').value),
+      CognitiveScore:          parseInt(document.getElementById(p + 'CognitiveScore').value),
+      SimulationScore:         simScore,
+      BehavioralScore:         parseInt(document.getElementById(p + 'BehavioralScore').value),
+      SituationalScore:        parseInt(document.getElementById(p + 'SituationalScore').value),
+      Sorvex360PI_Score:       piScore,
+      HasPriorTradeExperience: parseInt(document.getElementById(p + 'HasPriorTradeExperience').value),
+      LongestJobTenure:        parseFloat(document.getElementById(p + 'LongestJobTenure').value),
+      CDL_Status:              parseInt(document.getElementById(p + 'CDL_Status').value),
+      VeteranStatus:           parseInt(document.getElementById(p + 'VeteranStatus').value),
+      ApprenticeshipInterest:  parseInt(document.getElementById(p + 'ApprenticeshipInterest').value),
+      HasValidLicense:         parseInt(document.getElementById(p + 'HasValidLicense').value),
+      CanPassDrugScreen:       parseInt(document.getElementById(p + 'CanPassDrugScreen').value),
+      CanPassBackgroundCheck:  parseInt(document.getElementById(p + 'CanPassBackgroundCheck').value),
+      MostRecentIndustry:      String(document.getElementById(p + 'MostRecentIndustry').value),
+      TrainingSource:          String(document.getElementById(p + 'TrainingSource').value),
+      SourceOfCandidate:       String(document.getElementById(p + 'SourceOfCandidate').value),
+      Sorvex360PI_Score_AtCompletion: piScore,
+      Sorvex360PI_ScoreAtHire:        piScore,
+      TotalTrainingHours:      trainHrs,
+      AttendanceRate:          att,
+      PassedRequiredModules:   parseInt(document.getElementById(p + 'PassedRequiredModules').value),
+      CertificationsEarned:    parseInt(document.getElementById(p + 'CertificationsEarned').value),
+      SimulationPerformance:   simScore,
+      SafetyCommitmentScore:   safety,
+      TeamworkScore:           3.2,
+      ReliabilityScore:        parseFloat((2.5 + att * 1.0).toFixed(2)),
+      PhysicalTestResult:      parseInt(document.getElementById(p + 'PhysicalTestResult').value),
+      Lift50lbsTest:           parseInt(document.getElementById(p + 'PhysicalTestResult').value),
+      Completed:               1,
+      ReadinessDelta:          readinessDelta,
+      UnionStatus:             parseInt(document.getElementById(p + 'UnionStatus').value),
+      EmploymentType:          "Full-Time",
+      RoleRequires_CDL:        0,
+      RoleRequires_OSHA10:     0,
+      RoleRequires_CPR:        0,
+      PreHire_Verified_MVR:    1,
+      PreHire_Verified_DrugScreen: 1,
+      PreHire_Verified_Background: 1,
+      Orientation_LOTO_Completed: safety >= 3.0 ? 1 : 0,
+      Orientation_PPE_Fitted:  1,
+      Apprenticeship_Registered: parseInt(document.getElementById(p + 'Apprenticeship_Registered').value),
+    };
+  }
+
+  async function runPrediction() {
+    setLoading(true);
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('scoreCard').classList.remove('visible');
+    document.getElementById('candidateInfo').classList.remove('visible');
+    document.getElementById('aiSummaryCard').classList.remove('visible');
+    document.getElementById('aiLoading').classList.remove('visible');
+    document.getElementById('errorCard').classList.remove('visible');
+
+    try {
+      if (compareMode) {
+        await runCompare();
+      } else {
+        await runSingle();
+      }
+    } catch(err) {
+      document.getElementById('errorMsg').textContent = err.message;
+      document.getElementById('errorCard').classList.add('visible');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function runSingle() {
+    const payload = buildPayload('');
+    const res = await fetch(API_BASE + '/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
-    document.getElementById('batchTable').style.display = 'table';
+    if (!res.ok) throw new Error(`API returned ${res.status}`);
+    const data = await res.json();
+
+    renderResults(data, payload,
+      'scoreCard', 'predictionsList', 'ringFg', 'overallScoreVal', 'overallTierBadge',
+      'cohortBanner', 'cohortText', 'cohortPct', 'candidateInfo', 'candidateInfoRows');
+
+    await runExplain(payload, data);
   }
 
-  function openDetail(data) {
-    const panel = document.getElementById('detailPanel');
-    const content = document.getElementById('panelContent');
-    content.innerHTML = `
-        <h2 style="font-family:'DM Serif Display'; font-size:24px;">${data.candidate_summary.overall_tier}</h2>
-        <div style="font-size:48px; margin:20px 0;">${data.candidate_summary.overall_score.toFixed(1)}</div>
-        <p style="color:var(--slate)">Cohort Percentile: ${data.cohort.percentile}th</p>
-        <hr style="opacity:0.1; margin:20px 0;">
-        `;
-    panel.classList.add('open');
+  async function runCompare() {
+    const payloadA = buildPayload('');
+    const payloadB = buildPayload('B_');
+
+    const res = await fetch(API_BASE + '/compare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ candidate_a: payloadA, candidate_b: payloadB })
+    });
+    if (!res.ok) throw new Error(`Compare API returned ${res.status}`);
+    const data = await res.json();
+
+    // Render Candidate A
+    renderResults(data.candidate_a, payloadA,
+      'scoreCard', 'predictionsList', 'ringFg', 'overallScoreVal', 'overallTierBadge',
+      'cohortBanner', 'cohortText', 'cohortPct', 'candidateInfo', 'candidateInfoRows');
+
+    // Render Candidate B
+    document.getElementById('emptyStateB').style.display = 'none';
+    renderResults(data.candidate_b, payloadB,
+      'scoreCardB', 'predictionsListB', 'ringFgB', 'overallScoreValB', 'overallTierBadgeB',
+      'cohortBannerB', 'cohortTextB', 'cohortPctB', 'candidateInfoB', 'candidateInfoRowsB');
+
+    // Show winner panel
+    const wrapper = document.getElementById('compareWinnerWrapper');
+    wrapper.style.display = 'block';
+    const rec = data.recommended;
+    document.getElementById('compareWinnerBadge').innerHTML =
+      `<div class="winner-badge">✦ Candidate ${rec} Recommended</div>`;
+    document.getElementById('compareCommentary').textContent = data.comparison;
   }
 
-  function closePanel() { document.getElementById('detailPanel').classList.remove('open'); }
+  async function runExplain(payload, predData) {
+    document.getElementById('aiLoading').classList.add('visible');
+    try {
+      const shapFactors = {};
+      for (const [key, val] of Object.entries(predData.predictions)) {
+        shapFactors[key] = val.shap_factors || [];
+      }
+      const explainPayload = {
+        candidate: payload,
+        predictions: {
+          ...predData.predictions,
+          overall_tier: predData.candidate_summary.overall_tier,
+        },
+        cohort: predData.cohort,
+        shap_factors: shapFactors,
+      };
+      const res = await fetch(API_BASE + '/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(explainPayload)
+      });
+      if (!res.ok) throw new Error(`Explain API returned ${res.status}`);
+      const data = await res.json();
+      document.getElementById('aiSummaryText').textContent = data.summary;
+      document.getElementById('planText').textContent = data.onboarding_plan;
+      document.getElementById('aiSummaryCard').classList.add('visible');
+    } catch(e) {
+      console.warn('AI explain failed:', e.message);
+    } finally {
+      document.getElementById('aiLoading').classList.remove('visible');
+    }
+  }
+
+  function togglePlan() {
+    planVisible = !planVisible;
+    document.getElementById('planContent').classList.toggle('visible', planVisible);
+    document.getElementById('planArrow').textContent = planVisible ? '▲' : '▼';
+  }
+
+  function renderResults(data, payload, scoreCardId, predsListId, ringId, scoreValId, tierBadgeId,
+                         cohortBannerId, cohortTextId, cohortPctId, infoId, infoRowsId) {
+    const summary = data.candidate_summary;
+    const preds   = data.predictions;
+
+    // Ring animation
+    const score = summary.overall_score;
+    const circumference = 326.7;
+    const offset = circumference - (score / 100) * circumference;
+    const ring = document.getElementById(ringId);
+    ring.style.strokeDashoffset = circumference;
+    const tc = overallTierClass(summary.overall_tier);
+    const ringColors = { low: '#059669', med: '#D97706', high: '#DC2626' };
+    ring.style.stroke = ringColors[tc];
+    setTimeout(() => { ring.style.strokeDashoffset = offset; }, 100);
+
+    document.getElementById(scoreValId).textContent = score.toFixed(1);
+    const badge = document.getElementById(tierBadgeId);
+    badge.className = `overall-tier-badge tier-${tc}`;
+    badge.innerHTML = `<span class="tier-dot dot-${tc}"></span><span>${summary.overall_tier}</span>`;
+
+    // Cohort
+    if (data.cohort) {
+      document.getElementById(cohortTextId).textContent = data.cohort.description;
+      document.getElementById(cohortPctId).textContent  = data.cohort.percentile + 'th';
+      document.getElementById(cohortBannerId).style.display = 'flex';
+    }
+
+    // Prediction rows with plain English SHAP
+    const predMap = [
+      { key: 'retention', label: 'Retention (1-Year)', icon: '📋' },
+      { key: 'safety',    label: 'Safety Risk',        icon: '⚠️' },
+      { key: 'promotion', label: 'Promotion (24mo)',   icon: '📈' },
+    ];
+
+    const list = document.getElementById(predsListId);
+    list.innerHTML = '';
+    predMap.forEach(({ key, label, icon }) => {
+      const p   = preds[key];
+      const ptc = tierClass(p.risk_tier);
+      const shapHTML = buildShapHTML(p.shap_factors, key);
+
+      list.innerHTML += `
+        <div class="prediction-row">
+          <div class="prediction-header">
+            <div class="prediction-name">${icon} ${label}</div>
+            <div class="prediction-tier tier-${ptc}">${p.risk_tier} Risk</div>
+          </div>
+          <div class="prediction-bar-track">
+            <div class="prediction-bar-fill bar-${ptc}" style="width:0%" data-width="${p.score}%"></div>
+          </div>
+          <div class="prediction-meta">
+            <span>Score: ${p.score}/100</span>
+            <span>Probability: ${(p.probability * 100).toFixed(1)}%</span>
+          </div>
+          ${shapHTML}
+        </div>`;
+    });
+
+    setTimeout(() => {
+      document.querySelectorAll('.prediction-bar-fill').forEach(bar => {
+        bar.style.width = bar.dataset.width;
+      });
+    }, 200);
+
+    // Candidate info table
+    const socLabels = {
+      '49-9051.00': 'Power Line Installer/Repairer',
+      '49-2022.00': 'Telecom Equipment Installer',
+      '51-8013.00': 'Power Plant Operator',
+      '51-8031.00': 'Water/Wastewater Treatment Op.',
+      '51-8092.00': 'Gas Plant Operator',
+      '43-5041.00': 'Meter Reader, Utilities',
+    };
+    const rows = [
+      ['SOC Role',     socLabels[summary.soc_code] || summary.soc_code],
+      ['PI Score',     summary.pi_score.toFixed(1)],
+      ['Age',          payload.Age],
+      ['Education',    payload.EducationLevel],
+      ['State',        payload.State],
+      ['Attendance',   (payload.AttendanceRate * 100).toFixed(0) + '%'],
+      ['Safety Score', payload.SafetyCommitmentScore.toFixed(1) + ' / 5'],
+      ['Training Hrs', payload.TotalTrainingHours.toLocaleString()],
+      ['Prior Exp',    payload.HasPriorTradeExperience ? 'Yes' : 'No'],
+      ['Veteran',      payload.VeteranStatus ? 'Yes' : 'No'],
+    ];
+    document.getElementById(infoRowsId).innerHTML = rows.map(([l, v]) =>
+      `<div class="info-row"><span class="info-label">${l}</span><span class="info-value">${v}</span></div>`
+    ).join('');
+
+    document.getElementById(scoreCardId).classList.add('visible');
+    document.getElementById(infoId).classList.add('visible');
+  }
 </script>
-
 </body>
 </html>
