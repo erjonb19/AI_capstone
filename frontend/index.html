@@ -527,6 +527,25 @@
     font-size: 11px; letter-spacing: 0.5px;
   }
 
+nav#mainNav {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 48px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+}
+
+.nav-link {
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--slate); text-decoration: none;
+  padding: 8px 18px; border-radius: 20px;
+  transition: all 0.2s;
+}
+
+.nav-link:hover { color: var(--white); background: rgba(255,255,255,0.06); }
+.nav-link.active { color: var(--blue-light); background: rgba(37,99,235,0.12); border: 1px solid rgba(37,99,235,0.25); }
+  
   @media (max-width: 900px) {
     .main { grid-template-columns: 1fr; padding: 0 24px 60px; }
     .main.compare-mode { grid-template-columns: 1fr; }
@@ -556,7 +575,14 @@
   </div>
 </header>
 
-<div class="hero">
+  <nav id="mainNav">
+  <a href="#home" class="nav-link active" onclick="setActive(this)">Home</a>
+  <a href="#upload" class="nav-link" onclick="setActive(this)">Upload</a>
+  <a href="#compare" class="nav-link" onclick="setActive(this)">Compare</a>
+  <a href="#about" class="nav-link" onclick="setActive(this)">About</a>
+</nav>
+
+<div class="hero" id="home">
   <div class="hero-eyebrow">Utility Workforce Prediction Pipeline</div>
   <h1>Predict Candidate Risk<br><em>Before Day One</em></h1>
   <p>Enter a candidate profile to receive AI-powered predictions for retention risk, safety likelihood, and promotion potential across 6 utility SOC codes.</p>
@@ -1186,6 +1212,19 @@
     document.getElementById(scoreCardId).classList.add('visible');
     document.getElementById(infoId).classList.add('visible');
   }
+
+  function setActive(el) {
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  el.classList.add('active');
+}
+
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', e => {
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+  });
+});
+  
 </script>
 </body>
 </html>
