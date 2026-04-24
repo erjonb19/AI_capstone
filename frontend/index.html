@@ -605,9 +605,9 @@ nav#mainNav {
 </div>
 
 <div id="sharedBtnBar" style="position:relative;z-index:10;text-align:center;padding:16px 48px 0;display:none;">
-  <button class="submit-btn" id="submitBtn" onclick="runPrediction()">
-        <span id="btnText">Run Risk Prediction</span>
-        <div class="btn-loader" id="btnLoader"></div>
+  <button class="submit-btn" id="submitBtnCompare" onclick="runPrediction()" style="max-width:400px;margin:0 auto;">
+    <span>Compare Candidates</span>
+    <div class="btn-loader" id="btnLoaderCompare"></div>
   </button>
 </div>
   
@@ -682,6 +682,10 @@ nav#mainNav {
           <div class="form-group"><label class="phase2-label">Apprenticeship Registered</label><select class="phase2-input" id="Apprenticeship_Registered"><option value="0">No</option><option value="1">Yes</option></select></div>
         </div>
       </div>
+      <button class="submit-btn" id="submitBtn" onclick="runPrediction()">
+        <span id="btnText">Run Risk Prediction</span>
+        <div class="btn-loader" id="btnLoader"></div>
+      </button>
     </div>
 
     <!-- Results A -->
@@ -892,31 +896,33 @@ nav#mainNav {
     compareMode = !compareMode;
     const toggle  = document.getElementById('compareToggle');
     const grid    = document.getElementById('mainGrid');
-    const btnTxt  = document.getElementById('btnText');
     const wrapper = document.getElementById('compareWinnerWrapper');
 
     toggle.classList.toggle('active', compareMode);
     grid.classList.toggle('compare-mode', compareMode);
-    btnTxt.textContent = compareMode ? 'Compare Candidates' : 'Run Risk Prediction';
 
     if (!compareMode) {
       wrapper.style.display = 'none';
-      // Reset B results
       document.getElementById('scoreCardB').classList.remove('visible');
       document.getElementById('candidateInfoB').classList.remove('visible');
       document.getElementById('emptyStateB').style.display = 'block';
     }
     document.getElementById('submitBtn').style.display = compareMode ? 'none' : 'block';
-    document.getElementById('sharedBtnBar').style.display = compareMode ? 'block' 
+    document.getElementById('sharedBtnBar').style.display = compareMode ? 'block' : 'none';
   }
 
   function setLoading(loading) {
     const btn = document.getElementById('submitBtn');
     const txt = document.getElementById('btnText');
     const ldr = document.getElementById('btnLoader');
+    const btnC = document.getElementById('submitBtnCompare');
+    const ldrC = document.getElementById('btnLoaderCompare');
     btn.disabled = loading;
+    btnC.disabled = loading;
     txt.style.display = loading ? 'none' : 'block';
     ldr.style.display = loading ? 'block' : 'none';
+    btnC.querySelector('span').style.display = loading ? 'none' : 'block';
+    ldrC.style.display = loading ? 'block' : 'none';
   }
 
   function tierClass(tier) {
