@@ -1,0 +1,770 @@
+{% extends "base.html" %}
+
+{% block title %}Candidate Intelligence{% endblock %}
+{% block topbar_title %}Candidate Intelligence — Deep Dive{% endblock %}
+
+{% block extra_styles %}
+/* Layout */
+.candidates-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Candidate list panel */
+.candidate-list-panel {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  position: sticky;
+  top: 24px;
+  max-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+}
+
+.list-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.list-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--slate);
+}
+
+.list-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--blue-light);
+}
+
+.list-search {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.search-input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--white);
+  font-family: 'Outfit', sans-serif; font-size: 13px;
+  outline: none; transition: all 0.2s;
+}
+
+.search-input:focus {
+  border-color: var(--blue);
+  background: rgba(37,99,235,0.06);
+}
+
+.search-input::placeholder { color: rgba(148,163,184,0.4); }
+
+.candidate-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.candidate-item {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex; align-items: center; gap: 12px;
+}
+
+.candidate-item:hover { background: rgba(255,255,255,0.03); }
+.candidate-item.active { background: rgba(37,99,235,0.1); border-left: 3px solid var(--blue-light); }
+.candidate-item:last-child { border-bottom: none; }
+
+.candidate-rank {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--slate);
+  width: 24px; text-align: center; flex-shrink: 0;
+}
+
+.candidate-info { flex: 1; min-width: 0; }
+
+.candidate-role {
+  font-size: 12px; font-weight: 600; color: var(--white);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.candidate-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--slate);
+}
+
+.candidate-score-badge {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px; flex-shrink: 0;
+}
+
+/* Detail panel */
+.detail-panel { display: flex; flex-direction: column; gap: 20px; }
+
+.empty-state {
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 64px 32px;
+  text-align: center;
+  color: var(--slate);
+}
+
+.empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+.empty-text { font-size: 14px; line-height: 1.6; }
+
+/* Score ring */
+.score-ring-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.score-ring-layout {
+  display: flex; align-items: center; gap: 32px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.ring-wrap {
+  position: relative; width: 130px; height: 130px; flex-shrink: 0;
+}
+
+.ring-wrap svg { transform: rotate(-90deg); }
+
+.ring-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+.ring-score {
+  font-family: 'DM Serif Display', serif;
+  font-size: 36px; line-height: 1; color: white;
+}
+
+.ring-max {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--slate); margin-top: 2px;
+}
+
+.score-info { flex: 1; }
+
+.score-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px; color: var(--white); margin-bottom: 6px;
+}
+
+.score-role {
+  font-size: 13px; color: var(--slate); margin-bottom: 12px;
+}
+
+.score-meta {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+
+.meta-pill {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; padding: 4px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--slate-light);
+}
+
+/* Predictions row */
+.predictions-row {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+}
+
+.pred-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px; padding: 14px;
+}
+
+.pred-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.pred-name { font-size: 12px; font-weight: 600; color: var(--slate-light); }
+.pred-tier { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+
+.pred-bar-track {
+  height: 4px; background: rgba(255,255,255,0.08);
+  border-radius: 2px; overflow: hidden; margin-bottom: 6px;
+}
+
+.pred-bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+.pred-meta {
+  display: flex; justify-content: space-between;
+  font-family: 'DM Mono', monospace; font-size: 9px; color: var(--slate);
+  margin-bottom: 8px;
+}
+
+.shap-section {
+  margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.shap-label {
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--slate); margin-bottom: 4px;
+}
+
+.shap-item {
+  font-size: 10px; color: var(--slate-light);
+  padding: 2px 0; line-height: 1.4;
+}
+
+/* Forensic Behavioral Replay */
+.forensic-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.forensic-title {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 20px;
+}
+
+.forensic-badge {
+  background: rgba(124,58,237,0.12);
+  border: 1px solid rgba(124,58,237,0.25);
+  border-radius: 8px; padding: 4px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: #A78BFA;
+}
+
+.radar-wrap {
+  display: flex; align-items: flex-start; gap: 32px;
+}
+
+.radar-chart {
+  flex-shrink: 0;
+}
+
+.radar-legend {
+  flex: 1; display: flex; flex-direction: column; gap: 10px;
+}
+
+.radar-legend-item {
+  display: flex; align-items: center; gap: 10px;
+}
+
+.radar-legend-label {
+  font-size: 12px; color: var(--slate-light); flex: 1;
+}
+
+.radar-legend-bar-track {
+  flex: 2; height: 6px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 3px; overflow: hidden;
+}
+
+.radar-legend-bar {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease;
+}
+
+.radar-legend-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--slate);
+  min-width: 32px; text-align: right;
+}
+
+/* Cohort banner */
+.cohort-card {
+  background: rgba(37,99,235,0.06);
+  border: 1px solid rgba(37,99,235,0.18);
+  border-radius: 14px; padding: 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.cohort-info { flex: 1; }
+.cohort-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--blue-light); margin-bottom: 4px;
+}
+.cohort-desc { font-size: 13px; color: var(--slate-light); }
+.cohort-pct {
+  font-family: 'DM Serif Display', serif;
+  font-size: 48px; color: var(--blue-light); line-height: 1;
+}
+.cohort-pct-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--slate); text-align: right;
+}
+
+/* AI Analyst sidebar */
+.ai-analyst-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px; padding: 20px;
+}
+
+.ai-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ai-gem {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, #4285f4, #0d9488);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+
+.ai-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--blue-light);
+}
+
+.ai-text {
+  font-size: 13px; color: var(--slate-light);
+  line-height: 1.65;
+}
+
+.ai-loading {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 10px;
+}
+
+.ai-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(37,99,235,0.3);
+  border-top-color: var(--blue-light);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.plan-toggle-btn {
+  width: 100%; margin-top: 14px; padding: 10px 14px;
+  background: rgba(13,148,136,0.1);
+  border: 1px solid rgba(13,148,136,0.25);
+  border-radius: 10px; color: #2DD4BF;
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.plan-toggle-btn:hover { background: rgba(13,148,136,0.18); }
+
+.plan-content {
+  display: none; margin-top: 10px;
+  background: rgba(13,148,136,0.04);
+  border: 1px solid rgba(13,148,136,0.12);
+  border-radius: 10px; padding: 14px;
+  font-size: 12px; color: var(--slate-light);
+  line-height: 1.7; white-space: pre-line;
+}
+
+.plan-content.open { display: block; animation: fadeIn 0.3s ease; }
+
+/* PDF button */
+.pdf-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 12px;
+  background: rgba(37,99,235,0.1);
+  border: 1px solid rgba(37,99,235,0.25);
+  border-radius: 10px; color: var(--blue-light);
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
+  margin-top: 12px;
+}
+
+.pdf-btn:hover { background: rgba(37,99,235,0.18); }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-eyebrow">Deep Dive Analysis</div>
+  <h1 class="page-title">Candidate Intelligence</h1>
+  <p class="page-subtitle">Select a candidate from your uploaded cohort to view their full risk profile, behavioral replay, and AI analyst summary.</p>
+</div>
+
+<div class="candidates-layout">
+
+  <!-- Left: Candidate list -->
+  <div class="candidate-list-panel">
+    <div class="list-header">
+      <div class="list-title">Cohort</div>
+      <div class="list-count" id="listCount">0 candidates</div>
+    </div>
+    <div class="list-search">
+      <input class="search-input" type="text" placeholder="Search by role or score..." id="searchInput" oninput="filterList()">
+    </div>
+    <div class="candidate-list" id="candidateList">
+      <div style="padding:32px;text-align:center;color:var(--slate);font-size:13px;">
+        No candidates loaded.<br>
+        <a href="/upload" style="color:var(--blue-light);">Upload a batch →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Detail panel -->
+  <div class="detail-panel" id="detailPanel">
+    <div class="empty-state">
+      <div class="empty-icon">👤</div>
+      <div class="empty-text">Select a candidate from the list<br>to view their full intelligence profile.</div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const API_BASE = '{{ api_base }}';
+
+const SOC_LABELS = {
+  '49-9051.00':'Power Line Installer/Repairer',
+  '49-2022.00':'Telecom Equipment Installer',
+  '51-8013.00':'Power Plant Operator',
+  '51-8031.00':'Water/Wastewater Treatment Op.',
+  '51-8092.00':'Gas Plant Operator',
+  '43-5041.00':'Meter Reader, Utilities',
+};
+
+let allCandidates = [];
+let selectedIdx = null;
+let planVisible = false;
+
+try {
+  const stored = sessionStorage.getItem('sorvex_batch_results');
+  if (stored) allCandidates = JSON.parse(stored);
+} catch(e) {}
+
+// Sort by composite score descending
+allCandidates.sort((a,b) => (b.data?.candidate_summary?.overall_score || 0) - (a.data?.candidate_summary?.overall_score || 0));
+
+function filterList() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  renderList(q);
+}
+
+function renderList(filter = '') {
+  const list = document.getElementById('candidateList');
+  document.getElementById('listCount').textContent = allCandidates.length + ' candidates';
+
+  if (allCandidates.length === 0) {
+    list.innerHTML = `<div style="padding:32px;text-align:center;color:var(--slate);font-size:13px;">No candidates loaded.<br><a href="/upload" style="color:var(--blue-light);">Upload a batch →</a></div>`;
+    return;
+  }
+
+  list.innerHTML = '';
+  allCandidates.forEach((c, idx) => {
+    if (!c.data) return;
+    const s = c.data.candidate_summary;
+    const role = SOC_LABELS[s.soc_code] || s.soc_code;
+    const score = s.overall_score.toFixed(1);
+    const tc = s.overall_tier.includes('Low') ? '#059669' : s.overall_tier.includes('Medium') ? '#D97706' : '#DC2626';
+
+    if (filter && !role.toLowerCase().includes(filter) && !score.includes(filter)) return;
+
+    const item = document.createElement('div');
+    item.className = 'candidate-item' + (idx === selectedIdx ? ' active' : '');
+    item.onclick = () => selectCandidate(idx, item);
+    item.innerHTML = `
+      <div class="candidate-rank">${idx + 1}</div>
+      <div class="candidate-info">
+        <div class="candidate-role">${role}</div>
+        <div class="candidate-meta">Age ${c.payload.Age} · ${c.payload.State} · ${c.payload.EducationLevel}</div>
+      </div>
+      <div class="candidate-score-badge" style="color:${tc}">${score}</div>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function selectCandidate(idx, el) {
+  selectedIdx = idx;
+  document.querySelectorAll('.candidate-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderDetail(allCandidates[idx]);
+}
+
+function renderDetail(c) {
+  const s = c.data.candidate_summary;
+  const p = c.data.predictions;
+  const pl = c.payload;
+  const tc = s.overall_tier.includes('Low') ? 'low' : s.overall_tier.includes('Medium') ? 'med' : 'high';
+  const ringColors = { low: '#059669', med: '#D97706', high: '#DC2626' };
+  const circ = 326.7;
+  const offset = circ - (s.overall_score / 100) * circ;
+
+  const predMap = [
+    { key: 'retention', label: 'Retention (1-Year)', icon: '📋' },
+    { key: 'safety',    label: 'Safety Risk',        icon: '⚠️' },
+    { key: 'promotion', label: 'Promotion (24mo)',   icon: '📈' },
+  ];
+
+  const barColors = {
+    low:  'linear-gradient(90deg,#059669,#34D399)',
+    med:  'linear-gradient(90deg,#D97706,#FCD34D)',
+    high: 'linear-gradient(90deg,#DC2626,#F87171)',
+  };
+  const tierBg  = { low:'#D1FAE5', med:'#FEF3C7', high:'#FEE2E2' };
+  const tierFg  = { low:'#059669', med:'#D97706',  high:'#DC2626' };
+
+  const predsHTML = predMap.map(({ key, label, icon }) => {
+    const pred = p[key];
+    const ptc = pred.risk_tier === 'Low' ? 'low' : pred.risk_tier === 'Medium' ? 'med' : 'high';
+    const shapHTML = pred.shap_factors && pred.shap_factors.length > 0 ? `
+      <div class="shap-section">
+        <div class="shap-label">Key Factors</div>
+        ${pred.shap_factors.map(f => {
+          const positive = (key === 'safety' && f.direction === 'decreases') || (key !== 'safety' && f.direction === 'increases');
+          return `<div class="shap-item"><span style="color:${positive ? '#34D399' : '#F87171'};font-weight:600;">${positive ? '✓' : '!'}</span> ${f.label}</div>`;
+        }).join('')}
+      </div>` : '';
+    return `
+      <div class="pred-card">
+        <div class="pred-header">
+          <div class="pred-name">${icon} ${label}</div>
+          <div class="pred-tier" style="background:${tierBg[ptc]};color:${tierFg[ptc]};">${pred.risk_tier}</div>
+        </div>
+        <div class="pred-bar-track">
+          <div class="pred-bar-fill" style="background:${barColors[ptc]};width:${pred.score}%;"></div>
+        </div>
+        <div class="pred-meta">
+          <span>Score: ${pred.score}/100</span>
+          <span>${(pred.probability * 100).toFixed(1)}%</span>
+        </div>
+        ${shapHTML}
+      </div>`;
+  }).join('');
+
+  // Forensic replay scores
+  const scores = [
+    { label: 'Cognitive',    val: pl.CognitiveScore,    max: 100, color: '#3B82F6' },
+    { label: 'Behavioral',   val: pl.BehavioralScore,   max: 100, color: '#3B82F6' },
+    { label: 'Situational',  val: pl.SituationalScore,  max: 100, color: '#3B82F6' },
+    { label: 'Simulation',   val: pl.SimulationScore,   max: 100, color: '#0D9488' },
+    { label: 'PI Score',     val: pl.Sorvex360PI_Score, max: 100, color: '#7C3AED' },
+    { label: 'Safety Commitment', val: (pl.SafetyCommitmentScore || 0) * 20, max: 100, color: '#059669' },
+    { label: 'Attendance',   val: (pl.AttendanceRate || 0) * 100, max: 100, color: '#059669' },
+  ];
+
+  const radarLegendHTML = scores.map(s => `
+    <div class="radar-legend-item">
+      <div class="radar-legend-label">${s.label}</div>
+      <div class="radar-legend-bar-track">
+        <div class="radar-legend-bar" style="width:${s.val}%;background:${s.color};"></div>
+      </div>
+      <div class="radar-legend-val">${s.val.toFixed(0)}</div>
+    </div>
+  `).join('');
+
+  // Build radar SVG
+  const radarSVG = buildRadarSVG(scores);
+
+  const cohortHTML = c.data.cohort ? `
+    <div class="cohort-card">
+      <div class="cohort-info">
+        <div class="cohort-label">Cohort Ranking</div>
+        <div class="cohort-desc">${c.data.cohort.description}</div>
+      </div>
+      <div>
+        <div class="cohort-pct">${c.data.cohort.percentile}<span style="font-size:20px;">th</span></div>
+        <div class="cohort-pct-sub">percentile</div>
+      </div>
+    </div>` : '';
+
+  document.getElementById('detailPanel').innerHTML = `
+    <!-- Score ring card -->
+    <div class="score-ring-card">
+      <div class="score-ring-layout">
+        <div class="ring-wrap">
+          <svg width="130" height="130" viewBox="0 0 130 130">
+            <circle fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10" cx="65" cy="65" r="52"/>
+            <circle fill="none" stroke="${ringColors[tc]}" stroke-width="10" stroke-linecap="round"
+              cx="65" cy="65" r="52"
+              stroke-dasharray="326.7" stroke-dashoffset="${offset}"/>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-score">${s.overall_score.toFixed(1)}</div>
+            <div class="ring-max">/ 100</div>
+          </div>
+        </div>
+        <div class="score-info">
+          <div class="score-name">${SOC_LABELS[s.soc_code] || s.soc_code}</div>
+          <div class="score-role">${s.overall_tier} · ${c.data.cohort ? c.data.cohort.label : ''}</div>
+          <div class="score-meta">
+            <span class="meta-pill">Age ${pl.Age}</span>
+            <span class="meta-pill">${pl.State}</span>
+            <span class="meta-pill">${pl.EducationLevel}</span>
+            <span class="meta-pill">${pl.HasPriorTradeExperience ? 'Prior Exp' : 'No Prior Exp'}</span>
+            <span class="meta-pill">${pl.VeteranStatus ? 'Veteran' : ''}</span>
+          </div>
+        </div>
+      </div>
+      <div class="predictions-row">${predsHTML}</div>
+    </div>
+
+    <!-- Cohort -->
+    ${cohortHTML}
+
+    <!-- Forensic Behavioral Replay -->
+    <div class="forensic-card">
+      <div class="forensic-title">
+        <div class="card-title" style="margin:0;">Forensic Behavioral Replay</div>
+        <div class="forensic-badge">Simulation Data</div>
+      </div>
+      <div class="radar-wrap">
+        ${radarSVG}
+        <div class="radar-legend">${radarLegendHTML}</div>
+      </div>
+    </div>
+
+    <!-- AI Analyst -->
+    <div class="ai-analyst-card">
+      <div class="ai-header">
+        <div class="ai-gem">✦</div>
+        <div class="ai-title">AI Analyst — Gemini 2.5 Flash</div>
+      </div>
+      <div id="aiContent">
+        <div class="ai-loading" id="aiLoadingState">
+          <div class="ai-spinner"></div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--slate);">Gemini is analyzing this candidate...</div>
+        </div>
+      </div>
+      <button class="pdf-btn" onclick="exportPDF()">📄 &nbsp;Export Hiring Plan PDF</button>
+    </div>
+  `;
+
+  // Trigger AI analysis
+  runAIAnalysis(c);
+}
+
+function buildRadarSVG(scores) {
+  const cx = 100, cy = 100, r = 80;
+  const n = scores.length;
+  const angleStep = (2 * Math.PI) / n;
+
+  // Grid circles
+  let gridCircles = '';
+  [0.25, 0.5, 0.75, 1.0].forEach(f => {
+    gridCircles += `<circle cx="${cx}" cy="${cy}" r="${r * f}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`;
+  });
+
+  // Axis lines and labels
+  let axes = '';
+  let labels = '';
+  scores.forEach((s, i) => {
+    const angle = i * angleStep - Math.PI / 2;
+    const x2 = cx + r * Math.cos(angle);
+    const y2 = cy + r * Math.sin(angle);
+    const lx = cx + (r + 20) * Math.cos(angle);
+    const ly = cy + (r + 20) * Math.sin(angle);
+    axes += `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+    labels += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="rgba(148,163,184,0.7)" font-size="9" font-family="DM Mono">${s.label.split(' ')[0]}</text>`;
+  });
+
+  // Data polygon
+  const points = scores.map((s, i) => {
+    const angle = i * angleStep - Math.PI / 2;
+    const val = Math.min(100, Math.max(0, s.val)) / 100;
+    const x = cx + r * val * Math.cos(angle);
+    const y = cy + r * val * Math.sin(angle);
+    return `${x},${y}`;
+  }).join(' ');
+
+  const polygon = `<polygon points="${points}" fill="rgba(37,99,235,0.15)" stroke="#3B82F6" stroke-width="2"/>`;
+
+  // Dots
+  const dots = scores.map((s, i) => {
+    const angle = i * angleStep - Math.PI / 2;
+    const val = Math.min(100, Math.max(0, s.val)) / 100;
+    const x = cx + r * val * Math.cos(angle);
+    const y = cy + r * val * Math.sin(angle);
+    return `<circle cx="${x}" cy="${y}" r="4" fill="${s.color}" stroke="white" stroke-width="1.5"/>`;
+  }).join('');
+
+  return `
+    <svg class="radar-chart" width="200" height="200" viewBox="0 0 200 200">
+      ${gridCircles}
+      ${axes}
+      ${polygon}
+      ${dots}
+      ${labels}
+    </svg>`;
+}
+
+async function runAIAnalysis(c) {
+  try {
+    const shapFactors = {};
+    for (const [key, val] of Object.entries(c.data.predictions)) {
+      shapFactors[key] = val.shap_factors || [];
+    }
+    const explainPayload = {
+      candidate: c.payload,
+      predictions: {
+        ...c.data.predictions,
+        overall_tier: c.data.candidate_summary.overall_tier,
+      },
+      cohort: c.data.cohort,
+      shap_factors: shapFactors,
+    };
+
+    const res = await fetch(API_BASE + '/explain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(explainPayload),
+    });
+
+    if (!res.ok) throw new Error('Explain API failed');
+    const data = await res.json();
+
+    document.getElementById('aiContent').innerHTML = `
+      <div class="ai-text">${data.summary}</div>
+      <button class="plan-toggle-btn" onclick="togglePlan(this)">
+        <span>90-Day Onboarding Plan</span>
+        <span>▼</span>
+      </button>
+      <div class="plan-content" id="planContent">${data.onboarding_plan}</div>
+    `;
+  } catch(e) {
+    document.getElementById('aiContent').innerHTML = `
+      <div style="font-size:12px;color:var(--slate);">AI analysis unavailable: ${e.message}</div>`;
+  }
+}
+
+function togglePlan(btn) {
+  const plan = document.getElementById('planContent');
+  const isOpen = plan.classList.contains('open');
+  plan.classList.toggle('open', !isOpen);
+  btn.querySelector('span:last-child').textContent = isOpen ? '▼' : '▲';
+}
+
+function exportPDF() {
+  alert('PDF export — connect to /pdf endpoint in main.py. Coming in next build.');
+}
+
+// Initial render
+renderList();
+</script>
+{% endblock %}
