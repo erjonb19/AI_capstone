@@ -1238,9 +1238,15 @@ nav#mainNav {
     document.getElementById(infoId).classList.add('visible');
   }
 
-  function setActive(el) {
+function setActive(el) {
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   el.classList.add('active');
+  if (el.getAttribute('href') === '#home' && compareMode) {
+    toggleCompareMode();
+    setTimeout(() => {
+      document.getElementById('home').scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  }
 }
 
 document.querySelectorAll('.nav-link').forEach(link => {
@@ -1251,5 +1257,86 @@ document.querySelectorAll('.nav-link').forEach(link => {
 });
   
 </script>
+  <section id="about" style="position:relative;z-index:10;max-width:1200px;margin:0 auto;padding:60px 48px;">
+
+  <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--blue-light);margin-bottom:16px;">About Sorvex 360</div>
+  <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(28px,4vw,42px);margin-bottom:20px;background:linear-gradient(135deg,#fff 0%,#94A3B8 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Workforce Risk Intelligence<br><em>for the Utility Sector</em></h2>
+  <p style="font-size:16px;color:var(--slate);max-width:640px;line-height:1.7;margin-bottom:48px;font-weight:300;">Sorvex 360 is an AI-powered candidate screening platform built for utility workforce programs. It predicts 1-year retention, safety incident risk, and 24-month promotion potential using a CTGAN-trained synthetic dataset of 5,000 utility workforce profiles across six SOC codes.</p>
+
+  <!-- Tech cards -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:48px;">
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue-light);margin-bottom:12px;">Model</div>
+      <div style="font-size:14px;color:var(--slate-light);line-height:1.6;">XGBoost classifiers trained on 5,000 synthetic profiles · SHAP explainability · Cohort percentile ranking<br><br><span style="color:var(--slate);font-size:12px;">SHAP explanations appear when feature importance exceeds the model's significance threshold — not all predictions will display key factors.</span></div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue-light);margin-bottom:12px;">Data</div>
+      <div style="font-size:14px;color:var(--slate-light);line-height:1.6;">CTGAN synthetic dataset · 6 utility SOC codes · Phase 1 pre-hire + Phase 2 training program features</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue-light);margin-bottom:12px;">Stack</div>
+      <div style="font-size:14px;color:var(--slate-light);line-height:1.6;">Python · FastAPI · Google Cloud Run · Gemini 2.5 Flash · Vertex AI · HTML / CSS / JS</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue-light);margin-bottom:12px;">Built By</div>
+      <div style="font-size:14px;color:var(--slate-light);line-height:1.6;">Independent portfolio project targeting Data Engineering · ML Engineering · AI Engineering roles</div>
+    </div>
+  </div>
+
+  <!-- SOC Roles -->
+  <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--teal);margin-bottom:20px;">Supported SOC Roles</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:48px;">
+
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--teal);background:rgba(13,148,136,0.12);border:1px solid rgba(13,148,136,0.25);border-radius:6px;padding:3px 8px;">49-9051.00</div>
+      </div>
+      <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:8px;">Power Line Installer / Repairer</div>
+      <div style="font-size:13px;color:var(--slate);line-height:1.6;">Installs and repairs electrical power transmission and distribution lines. Works at height on energized lines, requiring strict safety compliance and physical endurance.</div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--teal);background:rgba(13,148,136,0.12);border:1px solid rgba(13,148,136,0.25);border-radius:6px;padding:3px 8px;">49-2022.00</div>
+      </div>
+      <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:8px;">Telecom Equipment Installer</div>
+      <div style="font-size:13px;color:var(--slate);line-height:1.6;">Sets up and maintains telecommunications equipment including switching, routing, and transmission systems. Requires strong technical aptitude and attention to detail.</div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--teal);background:rgba(13,148,136,0.12);border:1px solid rgba(13,148,136,0.25);border-radius:6px;padding:3px 8px;">51-8013.00</div>
+      </div>
+      <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:8px;">Power Plant Operator</div>
+      <div style="font-size:13px;color:var(--slate);line-height:1.6;">Controls and monitors equipment that generates electric power. Manages boilers, turbines, generators, and reactors, with high accountability for safety and reliability.</div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--teal);background:rgba(13,148,136,0.12);border:1px solid rgba(13,148,136,0.25);border-radius:6px;padding:3px 8px;">51-8031.00</div>
+      </div>
+      <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:8px;">Water / Wastewater Treatment Operator</div>
+      <div style="font-size:13px;color:var(--slate);line-height:1.6;">Operates treatment facilities that process water for consumption or treat wastewater before discharge. Requires regulatory knowledge and careful monitoring of chemical processes.</div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--teal);background:rgba(13,148,136,0.12);border:1px solid rgba(13,148,136,0.25);border-radius:6px;padding:3px 8px;">51-8092.00</div>
+      </div>
+      <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:8px;">Gas Plant Operator</div>
+      <div style="font-size:13px;color:var(--slate);line-height:1.6;">Controls equipment that purifies and processes natural gas for distribution. Works with high-pressure systems in environments requiring rigorous safety protocols and technical precision.</div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--teal);background:rgba(13,148,136,0.12);border:1px solid rgba(13,148,136,0.25);border-radius:6px;padding:3px 8px;">43-5041.00</div>
+      </div>
+      <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:8px;">Meter Reader, Utilities</div>
+      <div style="font-size:13px;color:var(--slate);line-height:1.6;">Reads electric, gas, water, and steam meters to record consumption data. Entry-level utility role emphasizing reliability, route efficiency, and customer-facing professionalism.</div>
+    </div>
+
+  </div>
+
+</section>
 </body>
 </html>
