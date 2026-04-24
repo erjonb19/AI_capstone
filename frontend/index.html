@@ -553,6 +553,17 @@ nav#mainNav {
 
 .nav-link:hover { color: var(--white); background: rgba(255,255,255,0.06); }
 .nav-link.active { color: var(--blue-light); background: rgba(37,99,235,0.12); border: 1px solid rgba(37,99,235,0.25); }
+
+.nav-compare-btn {
+  background: rgba(37,99,235,0.12);
+  border: 1px solid rgba(37,99,235,0.25);
+  border-radius: 20px; padding: 8px 18px;
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--blue-light); cursor: pointer; transition: all 0.2s;
+}
+.nav-compare-btn:hover { background: rgba(37,99,235,0.25); }
+.nav-compare-btn.active { background: rgba(37,99,235,0.3); border-color: var(--blue); color: white; }
   
   @media (max-width: 900px) {
     .main { grid-template-columns: 1fr; padding: 0 24px 60px; }
@@ -575,18 +586,16 @@ nav#mainNav {
     </div>
   </div>
   <div class="header-right">
-    <div class="compare-toggle" id="compareToggle" onclick="toggleCompareMode()">
-      <span class="toggle-dot"></span>
-      Compare Mode
-    </div>
+
   </div>
 </header>
 
-  <nav id="mainNav">
+<nav id="mainNav">
   <a href="#home" class="nav-link active" onclick="setActive(this)">Home</a>
   <a href="#upload" class="nav-link" onclick="setActive(this)">Upload</a>
-  <a href="#compare" class="nav-link" onclick="setActive(this)">Compare</a>
+  <a href="#mainGrid" class="nav-link" onclick="setActive(this)">Compare</a>
   <a href="#about" class="nav-link" onclick="setActive(this)">About</a>
+  <button class="nav-compare-btn" id="compareToggle" onclick="toggleCompareMode()">Compare Mode</button>
 </nav>
 
 <div class="hero" id="home">
