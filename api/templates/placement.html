@@ -1,0 +1,652 @@
+{% extends "base.html" %}
+
+{% block title %}Placement Readiness{% endblock %}
+{% block topbar_title %}Placement Readiness — Operational Planning{% endblock %}
+
+{% block extra_styles %}
+/* Bucket layout */
+.buckets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.bucket-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.bucket-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; gap: 12px;
+}
+
+.bucket-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+
+.bucket-icon.ready     { background: rgba(5,150,105,0.15); }
+.bucket-icon.prep      { background: rgba(217,119,6,0.15); }
+.bucket-icon.intervene { background: rgba(220,38,38,0.15); }
+
+.bucket-title {
+  font-size: 14px; font-weight: 600; color: var(--white);
+}
+
+.bucket-subtitle {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--slate);
+}
+
+.bucket-count {
+  margin-left: auto;
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+}
+
+.bucket-count.ready     { color: #059669; }
+.bucket-count.prep      { color: #D97706; }
+.bucket-count.intervene { color: #DC2626; }
+
+.bucket-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.bucket-item {
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.bucket-item:hover { background: rgba(255,255,255,0.03); }
+.bucket-item:last-child { border-bottom: none; }
+
+.bucket-item-role {
+  font-size: 12px; font-weight: 600; color: var(--white);
+  margin-bottom: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.bucket-item-meta {
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.bucket-item-info {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--slate);
+}
+
+.bucket-item-score {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Time to Autonomy section */
+.tta-section {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.tta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.tta-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+.tta-months {
+  font-family: 'DM Serif Display', serif;
+  font-size: 36px; line-height: 1;
+  margin-bottom: 4px;
+}
+
+.tta-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--slate); margin-bottom: 8px;
+}
+
+.tta-desc {
+  font-size: 11px; color: var(--slate); line-height: 1.5;
+}
+
+.tta-bar-track {
+  height: 4px; background: rgba(255,255,255,0.08);
+  border-radius: 2px; overflow: hidden;
+  margin-top: 10px;
+}
+
+.tta-bar-fill {
+  height: 100%; border-radius: 2px;
+  transition: width 1s ease;
+}
+
+/* Placement table */
+.placement-table-wrap {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+
+.placement-table-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* Summary stats */
+.placement-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.placement-stat {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+}
+
+/* Filter row */
+.placement-filters {
+  display: flex; gap: 12px; align-items: center;
+  margin-bottom: 24px; flex-wrap: wrap;
+}
+
+.filter-select {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; padding: 9px 14px;
+  color: var(--white);
+  font-family: 'Outfit', sans-serif; font-size: 13px;
+  outline: none; cursor: pointer; transition: all 0.2s;
+  min-width: 160px;
+}
+
+.filter-select:focus {
+  border-color: var(--blue);
+  background: rgba(37,99,235,0.08);
+}
+
+.filter-select option { background: #0F2035; }
+
+/* Readiness meter */
+.readiness-meter {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.meter-bar {
+  flex: 1; height: 6px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 3px; overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%; border-radius: 3px;
+}
+
+.meter-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--slate);
+  min-width: 28px; text-align: right;
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-eyebrow">Operational Planning</div>
+  <h1 class="page-title">Placement Readiness</h1>
+  <p class="page-subtitle">Sort candidates into deployment buckets and estimate Time-to-Autonomy for each hire.</p>
+</div>
+
+<!-- Filters -->
+<div class="placement-filters">
+  <select class="filter-select" id="roleFilter" onchange="applyFilters()">
+    <option value="all">All Roles</option>
+    <option value="49-9051.00">Power Line Installer/Repairer</option>
+    <option value="49-2022.00">Telecom Equipment Installer</option>
+    <option value="51-8013.00">Power Plant Operator</option>
+    <option value="51-8031.00">Water/Wastewater Treatment Op.</option>
+    <option value="51-8092.00">Gas Plant Operator</option>
+    <option value="43-5041.00">Meter Reader, Utilities</option>
+  </select>
+  <select class="filter-select" id="sortFilter" onchange="applyFilters()">
+    <option value="score">Sort by Composite Score</option>
+    <option value="tta">Sort by Time-to-Autonomy</option>
+    <option value="retention">Sort by Retention Risk</option>
+    <option value="safety">Sort by Safety Risk</option>
+  </select>
+</div>
+
+<!-- Summary stats -->
+<div class="placement-stats">
+  <div class="placement-stat">
+    <div class="stat-label">Ready Now</div>
+    <div class="stat-value" style="color:var(--low)" id="statReady">—</div>
+    <div class="stat-sub">Deploy immediately</div>
+  </div>
+  <div class="placement-stat">
+    <div class="stat-label">Needs Prep</div>
+    <div class="stat-value" style="color:var(--med)" id="statPrep">—</div>
+    <div class="stat-sub">30–90 day ramp</div>
+  </div>
+  <div class="placement-stat">
+    <div class="stat-label">Needs Intervention</div>
+    <div class="stat-value" style="color:var(--high)" id="statIntervene">—</div>
+    <div class="stat-sub">Not ready for placement</div>
+  </div>
+  <div class="placement-stat">
+    <div class="stat-label">Avg Time-to-Autonomy</div>
+    <div class="stat-value" id="statAvgTTA">—</div>
+    <div class="stat-sub">Months estimated</div>
+  </div>
+  <div class="placement-stat">
+    <div class="stat-label">Field Ready Rate</div>
+    <div class="stat-value" id="statReadyRate">—</div>
+    <div class="stat-sub">Of total cohort</div>
+  </div>
+</div>
+
+<!-- Placement buckets -->
+<div class="buckets-grid">
+
+  <!-- Ready Now -->
+  <div class="bucket-card">
+    <div class="bucket-header">
+      <div class="bucket-icon ready">✅</div>
+      <div>
+        <div class="bucket-title">Ready Now</div>
+        <div class="bucket-subtitle">Score ≥ 70 · Low Overall Risk</div>
+      </div>
+      <div class="bucket-count ready" id="readyCount">0</div>
+    </div>
+    <div class="bucket-list" id="readyList">
+      <div style="padding:24px;text-align:center;color:var(--slate);font-size:13px;">No candidates</div>
+    </div>
+  </div>
+
+  <!-- Needs Prep -->
+  <div class="bucket-card">
+    <div class="bucket-header">
+      <div class="bucket-icon prep">🔧</div>
+      <div>
+        <div class="bucket-title">Needs Prep</div>
+        <div class="bucket-subtitle">Score 50–69 · Medium Risk</div>
+      </div>
+      <div class="bucket-count prep" id="prepCount">0</div>
+    </div>
+    <div class="bucket-list" id="prepList">
+      <div style="padding:24px;text-align:center;color:var(--slate);font-size:13px;">No candidates</div>
+    </div>
+  </div>
+
+  <!-- Needs Intervention -->
+  <div class="bucket-card">
+    <div class="bucket-header">
+      <div class="bucket-icon intervene">🚨</div>
+      <div>
+        <div class="bucket-title">Needs Intervention</div>
+        <div class="bucket-subtitle">Score &lt; 50 · High Risk</div>
+      </div>
+      <div class="bucket-count intervene" id="interveneCount">0</div>
+    </div>
+    <div class="bucket-list" id="interveneList">
+      <div style="padding:24px;text-align:center;color:var(--slate);font-size:13px;">No candidates</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Time to Autonomy -->
+<div class="tta-section">
+  <div class="card-title">Time-to-Autonomy Estimates</div>
+  <p style="font-size:13px;color:var(--slate);margin-bottom:4px;">
+    Estimated months until a candidate can operate independently without direct supervision,
+    based on composite score, training hours, prior experience, and role complexity.
+  </p>
+  <div class="tta-grid" id="ttaGrid">
+    <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--slate);font-size:13px;">
+      Upload candidates to see Time-to-Autonomy estimates.
+    </div>
+  </div>
+</div>
+
+<!-- Full placement table -->
+<div class="placement-table-wrap">
+  <div class="placement-table-header">
+    <div class="card-title" style="margin:0;">Full Placement Rankings</div>
+    <button onclick="exportCSV()" class="btn-secondary" style="font-size:12px;padding:7px 14px;">
+      ⬇ Export CSV
+    </button>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Role</th>
+        <th>Age / State</th>
+        <th>Composite</th>
+        <th>Bucket</th>
+        <th>Time-to-Autonomy</th>
+        <th>Retention</th>
+        <th>Safety</th>
+        <th>Promotion</th>
+        <th>Readiness</th>
+      </tr>
+    </thead>
+    <tbody id="placementTableBody">
+      <tr>
+        <td colspan="10" style="text-align:center;padding:32px;color:var(--slate);">
+          No batch data loaded. <a href="/upload" style="color:var(--blue-light);">Upload candidates →</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const SOC_LABELS = {
+  '49-9051.00':'Power Line Installer/Repairer',
+  '49-2022.00':'Telecom Equipment Installer',
+  '51-8013.00':'Power Plant Operator',
+  '51-8031.00':'Water/Wastewater Treatment Op.',
+  '51-8092.00':'Gas Plant Operator',
+  '43-5041.00':'Meter Reader, Utilities',
+};
+
+// Role complexity factors for TTA calculation (months base)
+const ROLE_TTA_BASE = {
+  '49-9051.00': 18, // Power Line — most complex, high danger
+  '51-8013.00': 16, // Power Plant
+  '51-8092.00': 14, // Gas Plant
+  '51-8031.00': 12, // Water/Wastewater
+  '49-2022.00': 10, // Telecom
+  '43-5041.00': 6,  // Meter Reader — lowest complexity
+};
+
+let allCandidates = [];
+
+try {
+  const stored = sessionStorage.getItem('sorvex_batch_results');
+  if (stored) allCandidates = JSON.parse(stored);
+} catch(e) {}
+
+function calcTTA(c) {
+  const s = c.data.candidate_summary;
+  const pl = c.payload;
+  const base = ROLE_TTA_BASE[s.soc_code] || 12;
+
+  // Score factor: higher score = faster autonomy
+  const scoreFactor = 1 - ((s.overall_score - 50) / 100) * 0.4;
+
+  // Experience factor
+  const expFactor = pl.HasPriorTradeExperience ? 0.8 : 1.0;
+
+  // Training hours factor
+  const hrsFactor = pl.TotalTrainingHours >= 8000 ? 0.85 :
+                    pl.TotalTrainingHours >= 6000 ? 0.92 : 1.0;
+
+  // Veteran factor
+  const vetFactor = pl.VeteranStatus ? 0.9 : 1.0;
+
+  const tta = Math.round(base * scoreFactor * expFactor * hrsFactor * vetFactor);
+  return Math.max(3, Math.min(24, tta));
+}
+
+function getBucket(c) {
+  const score = c.data.candidate_summary.overall_score;
+  const tier  = c.data.candidate_summary.overall_tier;
+  if (score >= 70 && tier.includes('Low'))    return 'ready';
+  if (score >= 50 && !tier.includes('High'))  return 'prep';
+  return 'intervene';
+}
+
+function applyFilters() {
+  const role = document.getElementById('roleFilter').value;
+  const sort = document.getElementById('sortFilter').value;
+
+  let filtered = allCandidates.filter(c => {
+    if (!c.data) return false;
+    if (role !== 'all' && c.data.candidate_summary.soc_code !== role) return false;
+    return true;
+  });
+
+  filtered.sort((a, b) => {
+    if (sort === 'score')     return b.data.candidate_summary.overall_score - a.data.candidate_summary.overall_score;
+    if (sort === 'tta')       return calcTTA(a) - calcTTA(b);
+    if (sort === 'retention') return a.data.predictions.retention.score - b.data.predictions.retention.score;
+    if (sort === 'safety')    return a.data.predictions.safety.score - b.data.predictions.safety.score;
+    return 0;
+  });
+
+  renderPlacement(filtered);
+}
+
+function renderPlacement(candidates) {
+  const total = candidates.length;
+
+  if (total === 0) {
+    document.getElementById('statReady').textContent = '—';
+    document.getElementById('statPrep').textContent = '—';
+    document.getElementById('statIntervene').textContent = '—';
+    document.getElementById('statAvgTTA').textContent = '—';
+    document.getElementById('statReadyRate').textContent = '—';
+    return;
+  }
+
+  const ready     = candidates.filter(c => getBucket(c) === 'ready');
+  const prep      = candidates.filter(c => getBucket(c) === 'prep');
+  const intervene = candidates.filter(c => getBucket(c) === 'intervene');
+
+  // Stats
+  document.getElementById('statReady').textContent     = ready.length;
+  document.getElementById('statPrep').textContent      = prep.length;
+  document.getElementById('statIntervene').textContent = intervene.length;
+
+  const ttaValues = candidates.map(calcTTA);
+  const avgTTA = ttaValues.reduce((a,b) => a+b, 0) / total;
+  document.getElementById('statAvgTTA').textContent  = avgTTA.toFixed(1);
+  document.getElementById('statReadyRate').textContent = Math.round((ready.length / total) * 100) + '%';
+
+  // Bucket counts
+  document.getElementById('readyCount').textContent     = ready.length;
+  document.getElementById('prepCount').textContent      = prep.length;
+  document.getElementById('interveneCount').textContent = intervene.length;
+
+  // Render bucket lists
+  renderBucketList('readyList',     ready,     '#059669');
+  renderBucketList('prepList',      prep,      '#D97706');
+  renderBucketList('interveneList', intervene, '#DC2626');
+
+  // TTA grid
+  renderTTAGrid(candidates);
+
+  // Full table
+  renderPlacementTable(candidates);
+}
+
+function renderBucketList(listId, candidates, color) {
+  const list = document.getElementById(listId);
+  if (candidates.length === 0) {
+    list.innerHTML = `<div style="padding:24px;text-align:center;color:var(--slate);font-size:13px;">No candidates in this bucket</div>`;
+    return;
+  }
+  list.innerHTML = candidates.map(c => {
+    const s = c.data.candidate_summary;
+    const tta = calcTTA(c);
+    return `
+      <div class="bucket-item">
+        <div class="bucket-item-role">${SOC_LABELS[s.soc_code] || s.soc_code}</div>
+        <div class="bucket-item-meta">
+          <span class="bucket-item-info">Age ${c.payload.Age} · ${c.payload.State} · ${tta}mo TTA</span>
+          <span class="bucket-item-score" style="color:${color};">${s.overall_score.toFixed(1)}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderTTAGrid(candidates) {
+  const grid = document.getElementById('ttaGrid');
+  if (candidates.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--slate);font-size:13px;">Upload candidates to see TTA estimates.</div>`;
+    return;
+  }
+
+  // Group by role and compute avg TTA
+  const roleGroups = {};
+  candidates.forEach(c => {
+    const code = c.data.candidate_summary.soc_code;
+    if (!roleGroups[code]) roleGroups[code] = [];
+    roleGroups[code].push(calcTTA(c));
+  });
+
+  grid.innerHTML = Object.entries(roleGroups).map(([code, ttas]) => {
+    const avg = ttas.reduce((a,b) => a+b, 0) / ttas.length;
+    const base = ROLE_TTA_BASE[code] || 12;
+    const improvement = Math.round(((base - avg) / base) * 100);
+    const pct = Math.min(100, (avg / 24) * 100);
+    const color = avg <= 8 ? '#059669' : avg <= 14 ? '#D97706' : '#DC2626';
+
+    return `
+      <div class="tta-card">
+        <div class="tta-label">${SOC_LABELS[code] || code}</div>
+        <div class="tta-months" style="color:${color};">${avg.toFixed(1)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--slate);margin-bottom:4px;">months avg</div>
+        <div class="tta-desc">${ttas.length} candidate${ttas.length !== 1 ? 's' : ''} · ${improvement > 0 ? improvement + '% faster than baseline' : 'At baseline'}</div>
+        <div class="tta-bar-track">
+          <div class="tta-bar-fill" style="width:${pct}%;background:${color};"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderPlacementTable(candidates) {
+  const tbody = document.getElementById('placementTableBody');
+  tbody.innerHTML = '';
+
+  candidates.forEach((c, idx) => {
+    const s   = c.data.candidate_summary;
+    const p   = c.data.predictions;
+    const pl  = c.payload;
+    const tta = calcTTA(c);
+    const bucket = getBucket(c);
+
+    const bucketStyles = {
+      ready:     { bg: 'rgba(5,150,105,0.12)', color: '#34D399', label: '✅ Ready Now' },
+      prep:      { bg: 'rgba(217,119,6,0.12)',  color: '#FCD34D', label: '🔧 Needs Prep' },
+      intervene: { bg: 'rgba(220,38,38,0.12)',  color: '#F87171', label: '🚨 Intervention' },
+    };
+
+    const bs = bucketStyles[bucket];
+    const tc = s.overall_tier.includes('Low') ? '#059669' : s.overall_tier.includes('Medium') ? '#D97706' : '#DC2626';
+    const rtc = p.retention.risk_tier === 'Low' ? '#059669' : p.retention.risk_tier === 'Medium' ? '#D97706' : '#DC2626';
+    const stc = p.safety.risk_tier === 'Low' ? '#059669' : p.safety.risk_tier === 'Medium' ? '#D97706' : '#DC2626';
+    const ptc = p.promotion.risk_tier === 'Low' ? '#059669' : p.promotion.risk_tier === 'Medium' ? '#D97706' : '#DC2626';
+
+    // Readiness score = inverse of avg risk
+    const readiness = Math.round((s.overall_score / 100) * 100);
+    const rColor = readiness >= 70 ? '#059669' : readiness >= 50 ? '#D97706' : '#DC2626';
+
+    tbody.innerHTML += `
+      <tr>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--slate);">${idx + 1}</td>
+        <td style="color:var(--white);font-weight:500;font-size:12px;">${SOC_LABELS[s.soc_code] || s.soc_code}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--slate);">
+          ${pl.Age} · ${pl.State}
+        </td>
+        <td style="font-family:'DM Serif Display',serif;font-size:20px;color:${tc};">${s.overall_score.toFixed(1)}</td>
+        <td>
+          <span style="background:${bs.bg};color:${bs.color};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;">
+            ${bs.label}
+          </span>
+        </td>
+        <td>
+          <span style="font-family:'DM Serif Display',serif;font-size:18px;color:${tta <= 8 ? '#059669' : tta <= 14 ? '#D97706' : '#DC2626'};">
+            ${tta}
+          </span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--slate);"> mo</span>
+        </td>
+        <td style="color:${rtc};font-size:12px;font-weight:600;">${p.retention.risk_tier}</td>
+        <td style="color:${stc};font-size:12px;font-weight:600;">${p.safety.risk_tier}</td>
+        <td style="color:${ptc};font-size:12px;font-weight:600;">${p.promotion.risk_tier}</td>
+        <td>
+          <div class="readiness-meter">
+            <div class="meter-bar">
+              <div class="meter-fill" style="width:${readiness}%;background:${rColor};"></div>
+            </div>
+            <div class="meter-val">${readiness}%</div>
+          </div>
+        </td>
+      </tr>`;
+  });
+}
+
+function exportCSV() {
+  if (allCandidates.length === 0) { alert('No data to export.'); return; }
+
+  const headers = ['Rank','Role','Age','State','Composite Score','Bucket','TTA (months)','Retention','Safety','Promotion'];
+  const rows = allCandidates
+    .filter(c => c.data)
+    .sort((a,b) => b.data.candidate_summary.overall_score - a.data.candidate_summary.overall_score)
+    .map((c, idx) => {
+      const s = c.data.candidate_summary;
+      const p = c.data.predictions;
+      const bucket = getBucket(c);
+      const bucketLabel = bucket === 'ready' ? 'Ready Now' : bucket === 'prep' ? 'Needs Prep' : 'Needs Intervention';
+      return [
+        idx + 1,
+        SOC_LABELS[s.soc_code] || s.soc_code,
+        c.payload.Age,
+        c.payload.State,
+        s.overall_score.toFixed(1),
+        bucketLabel,
+        calcTTA(c),
+        p.retention.risk_tier,
+        p.safety.risk_tier,
+        p.promotion.risk_tier,
+      ].join(',');
+    });
+
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sorvex360_placement_report.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Initial render
+applyFilters();
+</script>
+{% endblock %}
