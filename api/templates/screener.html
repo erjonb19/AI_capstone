@@ -1,0 +1,683 @@
+{% extends "base.html" %}
+
+{% block title %}Single Screener{% endblock %}
+{% block topbar_title %}Single Screener — Candidate Risk Assessment{% endblock %}
+
+{% block extra_styles %}
+/* Layout */
+.screener-layout {
+  display: grid;
+  grid-template-columns: 1fr 440px;
+  gap: 28px;
+  align-items: start;
+}
+
+.screener-layout.compare-mode {
+  grid-template-columns: 1fr 1fr;
+  max-width: 100%;
+  gap: 20px;
+}
+
+/* Compare toggle */
+.compare-toggle-bar {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 24px;
+}
+
+.compare-toggle-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 18px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--slate); cursor: pointer; transition: all 0.2s;
+}
+
+.compare-toggle-btn:hover { background: rgba(37,99,235,0.1); border-color: var(--blue); color: var(--blue-light); }
+.compare-toggle-btn.active { background: rgba(37,99,235,0.15); border-color: var(--blue); color: var(--blue-light); }
+
+.toggle-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--slate); transition: background 0.2s;
+}
+.compare-toggle-btn.active .toggle-dot { background: var(--blue-light); }
+
+/* Candidate columns */
+.candidate-col {
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+.col-label {
+  display: none;
+  align-items: center; gap: 10px;
+  padding: 8px 16px; border-radius: 10px;
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.col-label.a { background: rgba(37,99,235,0.12); border: 1px solid rgba(37,99,235,0.25); color: var(--blue-light); }
+.col-label.b { background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25); color: #a78bfa; }
+
+.screener-layout.compare-mode .col-label { display: flex; }
+.screener-layout.compare-mode .col-b { display: flex; }
+.col-b { display: none; }
+
+/* Form card */
+.form-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px; padding: 32px;
+  backdrop-filter: blur(12px);
+}
+
+.form-section { margin-bottom: 24px; }
+
+.form-section-title {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--blue-light); margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.form-section-title.phase2 { color: var(--teal); }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+
+label {
+  font-size: 10px; font-weight: 500; letter-spacing: 0.5px;
+  color: var(--slate); text-transform: uppercase;
+}
+
+.phase2-label { color: #5EEAD4; }
+
+input[type="number"], select {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; padding: 9px 12px;
+  color: var(--white); font-family: 'Outfit', sans-serif;
+  font-size: 13px; transition: all 0.2s; outline: none; width: 100%;
+}
+
+input[type="number"]:focus, select:focus {
+  border-color: var(--blue);
+  background: rgba(37,99,235,0.08);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+
+.phase2-input:focus {
+  border-color: var(--teal);
+  background: rgba(13,148,136,0.08);
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.15);
+}
+
+select option { background: var(--navy-mid); color: white; }
+
+.score-group { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+
+.score-badge {
+  background: rgba(37,99,235,0.15); border: 1px solid rgba(37,99,235,0.3);
+  border-radius: 8px; padding: 9px 12px;
+  font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500;
+  color: var(--blue-light); min-width: 50px; text-align: center;
+}
+
+.score-badge.teal { background: rgba(13,148,136,0.15); border-color: rgba(13,148,136,0.3); color: #2DD4BF; }
+
+input[type="range"] {
+  padding: 0; height: 4px; background: rgba(255,255,255,0.1);
+  border: none; border-radius: 2px; cursor: pointer; accent-color: var(--blue); width: 100%;
+}
+
+input[type="range"].teal-range { accent-color: var(--teal); }
+
+.phase2-note {
+  background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2);
+  border-radius: 10px; padding: 10px 14px;
+  font-size: 12px; color: #5EEAD4; margin-bottom: 14px; line-height: 1.5;
+}
+
+/* Submit button */
+.submit-btn {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--blue), var(--teal));
+  border: none; border-radius: 12px; color: white;
+  font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all 0.3s; margin-top: 8px; letter-spacing: 0.3px;
+}
+
+.submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
+.submit-btn:active { transform: translateY(0); }
+.submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.btn-spinner {
+  display: none; width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+  border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto;
+}
+
+/* Shared compare button */
+.compare-submit-bar {
+  display: none;
+  text-align: center; padding: 0 0 24px;
+}
+
+.screener-layout.compare-mode ~ .compare-submit-bar { display: block; }
+
+/* Results panel */
+.results-panel {
+  position: sticky; top: 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+.results-empty {
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed rgba(255,255,255,0.08);
+  border-radius: 20px; padding: 48px 32px; text-align: center;
+}
+
+.empty-icon { font-size: 40px; margin-bottom: 14px; opacity: 0.35; }
+.empty-msg  { color: var(--slate); font-size: 13px; line-height: 1.6; }
+
+/* Score card */
+.score-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px; padding: 24px;
+  display: none; animation: fadeIn 0.4s ease;
+}
+
+.score-card.visible { display: block; }
+
+.overall-section {
+  text-align: center; margin-bottom: 20px;
+  padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.overall-label {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--slate); margin-bottom: 10px;
+}
+
+.ring-wrap {
+  position: relative; width: 120px; height: 120px;
+  margin: 0 auto 14px;
+}
+
+.ring-wrap svg { transform: rotate(-90deg); }
+
+.ring-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+.ring-value { font-family: 'DM Serif Display', serif; font-size: 32px; line-height: 1; color: white; }
+.ring-max   { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--slate); margin-top: 2px; }
+
+.overall-tier-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 18px; border-radius: 24px;
+  font-size: 13px; font-weight: 600;
+}
+
+/* Cohort */
+.cohort-banner {
+  background: rgba(37,99,235,0.08);
+  border: 1px solid rgba(37,99,235,0.2);
+  border-radius: 10px; padding: 12px 14px;
+  margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.cohort-pct { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--blue-light); }
+.cohort-txt { font-size: 12px; color: var(--slate); line-height: 1.4; max-width: 200px; }
+.cohort-lbl { font-size: 10px; font-weight: 600; color: var(--blue-light); font-family: 'DM Mono', monospace; letter-spacing: 1px; }
+
+/* Predictions */
+.predictions-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+
+.pred-row {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px; padding: 14px;
+}
+
+.pred-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.pred-name   { font-size: 12px; font-weight: 600; color: var(--slate-light); }
+.pred-tier   { font-size: 10px; font-weight: 600; padding: 2px 9px; border-radius: 10px; }
+
+.pred-bar-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; margin-bottom: 5px; }
+.pred-bar-fill  { height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+.pred-meta { display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 9px; color: var(--slate); margin-bottom: 6px; }
+
+.shap-factors { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); }
+.shap-title   { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--slate); margin-bottom: 4px; }
+.shap-item    { font-size: 10px; color: var(--slate-light); padding: 2px 0; line-height: 1.4; }
+
+/* Candidate info */
+.cand-info { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; display: none; }
+.cand-info.visible { display: block; animation: fadeIn 0.4s ease; }
+.info-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.info-row:last-child { border-bottom: none; }
+.info-label { color: var(--slate); font-family: 'DM Mono', monospace; font-size: 9px; }
+.info-value { color: var(--slate-light); font-weight: 500; }
+
+/* AI card */
+.ai-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px; display: none; animation: fadeIn 0.5s ease; }
+.ai-card.visible { display: block; }
+.ai-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.ai-gem { width: 24px; height: 24px; background: linear-gradient(135deg, #4285f4, #0d9488); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.ai-title { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--blue-light); }
+.ai-text  { font-size: 12px; color: var(--slate-light); line-height: 1.6; }
+
+.ai-loading { display: none; align-items: center; gap: 10px; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
+.ai-loading.visible { display: flex; }
+.ai-spinner { width: 14px; height: 14px; border: 2px solid rgba(37,99,235,0.3); border-top-color: var(--blue-light); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+.ai-loading-text { font-size: 11px; color: var(--slate); font-family: 'DM Mono', monospace; }
+
+.plan-toggle { width: 100%; padding: 9px 14px; background: rgba(13,148,136,0.1); border: 1px solid rgba(13,148,136,0.25); border-radius: 10px; color: #2DD4BF; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.2s; text-align: left; display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+.plan-toggle:hover { background: rgba(13,148,136,0.18); }
+.plan-content { display: none; margin-top: 10px; background: rgba(13,148,136,0.05); border: 1px solid rgba(13,148,136,0.15); border-radius: 10px; padding: 14px; }
+.plan-content.visible { display: block; animation: fadeIn 0.3s ease; }
+.plan-text { font-size: 12px; color: var(--slate-light); line-height: 1.7; white-space: pre-line; }
+
+/* Error */
+.error-card { background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.2); border-radius: 12px; padding: 14px; color: #FCA5A5; font-size: 12px; display: none; animation: fadeIn 0.3s ease; }
+.error-card.visible { display: block; }
+
+/* Compare winner */
+.compare-winner-card {
+  background: rgba(37,99,235,0.08);
+  border: 1px solid rgba(37,99,235,0.2);
+  border-radius: 16px; padding: 20px;
+  margin-top: 20px;
+  display: none; animation: fadeIn 0.5s ease;
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-eyebrow">Risk Assessment</div>
+  <h1 class="page-title">Single Screener</h1>
+  <p class="page-subtitle">Enter a candidate profile to receive AI-powered predictions for retention, safety, and promotion risk.</p>
+</div>
+
+<!-- Compare toggle -->
+<div class="compare-toggle-bar">
+  <button class="compare-toggle-btn" id="compareToggle" onclick="toggleCompare()">
+    <span class="toggle-dot"></span>
+    Compare Mode
+  </button>
+  <span style="font-size:12px;color:var(--slate);">Toggle to compare two candidates side by side</span>
+</div>
+
+<!-- Shared compare button (shows in compare mode) -->
+<div id="compareBtnBar" style="display:none;text-align:center;margin-bottom:20px;">
+  <button class="submit-btn" id="compareBtnMain" onclick="runPrediction()" style="max-width:400px;display:inline-block;">
+    <span id="compareBtnText">Compare Candidates</span>
+    <div class="btn-spinner" id="compareBtnSpinner"></div>
+  </button>
+</div>
+
+<!-- Main grid -->
+<div class="screener-layout" id="screenerGrid">
+
+  <!-- Column A -->
+  <div class="candidate-col col-a">
+    <div class="col-label a">⬤ Candidate A</div>
+    <div class="form-card">
+      {% include "partials/candidate_form.html" %}
+      <button class="submit-btn" id="submitBtn" onclick="runPrediction()">
+        <span id="btnText">Run Risk Prediction</span>
+        <div class="btn-spinner" id="btnSpinner"></div>
+      </button>
+    </div>
+
+    <!-- Results A -->
+    <div class="results-empty" id="emptyA">
+      <div class="empty-icon">⚡</div>
+      <div class="empty-msg">Fill in the candidate profile and click <strong>Run Risk Prediction</strong> to see AI-powered risk scores.</div>
+    </div>
+    <div class="score-card" id="scoreCardA"></div>
+    <div class="cand-info" id="candInfoA"></div>
+    <div class="ai-loading" id="aiLoadingA"><div class="ai-spinner"></div><div class="ai-loading-text">Gemini is analyzing this candidate...</div></div>
+    <div class="ai-card" id="aiCardA"></div>
+    <div class="error-card" id="errorCardA"><strong>⚠ Prediction Error</strong><br><span id="errorMsgA">Unable to connect.</span></div>
+  </div>
+
+  <!-- Column B (compare mode only) -->
+  <div class="candidate-col col-b">
+    <div class="col-label b">⬤ Candidate B</div>
+    <div class="form-card">
+      {% include "partials/candidate_form_b.html" %}
+    </div>
+    <div class="results-empty" id="emptyB">
+      <div class="empty-icon">⚡</div>
+      <div class="empty-msg">Click <strong>Compare Candidates</strong> to see Candidate B's scores.</div>
+    </div>
+    <div class="score-card" id="scoreCardB"></div>
+    <div class="cand-info" id="candInfoB"></div>
+  </div>
+
+  <!-- Single mode results panel -->
+  <div class="results-panel" id="singleResults">
+    <div class="results-empty" id="emptyResults">
+      <div class="empty-icon">⚡</div>
+      <div class="empty-msg">Fill in the candidate profile and click <strong>Run Risk Prediction</strong> to see AI-powered risk scores.</div>
+    </div>
+    <div class="score-card" id="scoreCard"></div>
+    <div class="cand-info" id="candInfo"></div>
+    <div class="ai-loading" id="aiLoading"><div class="ai-spinner"></div><div class="ai-loading-text">Gemini is analyzing this candidate...</div></div>
+    <div class="ai-card" id="aiCard"></div>
+    <div class="error-card" id="errorCard"><strong>⚠ Prediction Error</strong><br><span id="errorMsg">Unable to connect.</span></div>
+  </div>
+
+</div>
+
+<!-- Compare winner (below both columns) -->
+<div class="compare-winner-card" id="compareWinner">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+    <div style="width:24px;height:24px;background:linear-gradient(135deg,#4285f4,#0d9488);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;">⚖</div>
+    <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue-light);">AI Hiring Recommendation</div>
+  </div>
+  <div id="winnerBadge" style="margin-bottom:10px;"></div>
+  <div style="font-size:13px;color:var(--slate-light);line-height:1.7;white-space:pre-line;" id="compareCommentary"></div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const API_BASE = '{{ api_base }}';
+let compareMode = false;
+let planVisible = false;
+
+const SOC_LABELS = {
+  '49-9051.00':'Power Line Installer/Repairer','49-2022.00':'Telecom Equipment Installer',
+  '51-8013.00':'Power Plant Operator','51-8031.00':'Water/Wastewater Treatment Op.',
+  '51-8092.00':'Gas Plant Operator','43-5041.00':'Meter Reader, Utilities',
+};
+
+function toggleCompare() {
+  compareMode = !compareMode;
+  const grid   = document.getElementById('screenerGrid');
+  const toggle = document.getElementById('compareToggle');
+  const cmpBar = document.getElementById('compareBtnBar');
+  const sinRes = document.getElementById('singleResults');
+  const submitBtn = document.getElementById('submitBtn');
+
+  toggle.classList.toggle('active', compareMode);
+  grid.classList.toggle('compare-mode', compareMode);
+  cmpBar.style.display  = compareMode ? 'block' : 'none';
+  sinRes.style.display  = compareMode ? 'none'  : 'flex';
+  submitBtn.style.display = compareMode ? 'none' : 'block';
+
+  if (!compareMode) {
+    document.getElementById('compareWinner').style.display = 'none';
+    document.getElementById('scoreCardB').classList.remove('visible');
+    document.getElementById('candInfoB').classList.remove('visible');
+    document.getElementById('emptyB').style.display = 'block';
+  }
+}
+
+function updateBadge(inputId, badgeId) {
+  document.getElementById(badgeId).textContent = document.getElementById(inputId).value;
+}
+
+function updateBadgeDecimal(inputId, badgeId) {
+  const val = parseInt(document.getElementById(inputId).value);
+  let display;
+  if (inputId.includes('AttendanceRate'))       display = (val / 100).toFixed(2);
+  else if (inputId.includes('SafetyCommit'))    display = (val / 10).toFixed(1);
+  document.getElementById(badgeId).textContent = display;
+}
+
+function getAttendance(p='')  { return parseInt(document.getElementById(p+'AttendanceRate').value) / 100; }
+function getSafety(p='')      { return parseInt(document.getElementById(p+'SafetyCommitmentScore').value) / 10; }
+
+function buildPayload(prefix='') {
+  const p = prefix;
+  const att = getAttendance(p), safety = getSafety(p);
+  const pi  = parseFloat(document.getElementById(p+'Sorvex360PI_Score').value);
+  const sim = parseInt(document.getElementById(p+'SimulationScore').value);
+  const hrs = parseInt(document.getElementById(p+'TotalTrainingHours').value);
+  const rd  = parseFloat(((att-0.75)*20+(pi-65)*0.2).toFixed(1));
+  return {
+    SOC_Code: document.getElementById(p+'SOC_Code').value,
+    Age: parseInt(document.getElementById(p+'Age').value),
+    Gender: document.getElementById(p+'Gender').value,
+    State: document.getElementById(p+'State').value,
+    EducationLevel: document.getElementById(p+'EducationLevel').value,
+    CognitiveScore: parseInt(document.getElementById(p+'CognitiveScore').value),
+    BehavioralScore: parseInt(document.getElementById(p+'BehavioralScore').value),
+    SituationalScore: parseInt(document.getElementById(p+'SituationalScore').value),
+    SimulationScore: sim, Sorvex360PI_Score: pi,
+    HasPriorTradeExperience: parseInt(document.getElementById(p+'HasPriorTradeExperience').value),
+    LongestJobTenure: parseFloat(document.getElementById(p+'LongestJobTenure').value),
+    CDL_Status: parseInt(document.getElementById(p+'CDL_Status').value),
+    VeteranStatus: parseInt(document.getElementById(p+'VeteranStatus').value),
+    ApprenticeshipInterest: parseInt(document.getElementById(p+'ApprenticeshipInterest').value),
+    HasValidLicense: parseInt(document.getElementById(p+'HasValidLicense').value),
+    CanPassDrugScreen: parseInt(document.getElementById(p+'CanPassDrugScreen').value),
+    CanPassBackgroundCheck: parseInt(document.getElementById(p+'CanPassBackgroundCheck').value),
+    MostRecentIndustry: document.getElementById(p+'MostRecentIndustry').value,
+    TrainingSource: document.getElementById(p+'TrainingSource').value,
+    SourceOfCandidate: document.getElementById(p+'SourceOfCandidate').value,
+    Sorvex360PI_Score_AtCompletion: pi, Sorvex360PI_ScoreAtHire: pi,
+    TotalTrainingHours: hrs, AttendanceRate: att,
+    PassedRequiredModules: parseInt(document.getElementById(p+'PassedRequiredModules').value),
+    CertificationsEarned: parseInt(document.getElementById(p+'CertificationsEarned').value),
+    SimulationPerformance: sim, SafetyCommitmentScore: safety,
+    TeamworkScore: 3.2, ReliabilityScore: parseFloat((2.5+att).toFixed(2)),
+    PhysicalTestResult: parseInt(document.getElementById(p+'PhysicalTestResult').value),
+    Lift50lbsTest: parseInt(document.getElementById(p+'PhysicalTestResult').value),
+    Completed: 1, ReadinessDelta: rd,
+    UnionStatus: parseInt(document.getElementById(p+'UnionStatus').value),
+    EmploymentType: 'Full-Time',
+    RoleRequires_CDL:0, RoleRequires_OSHA10:0, RoleRequires_CPR:0,
+    PreHire_Verified_MVR:1, PreHire_Verified_DrugScreen:1, PreHire_Verified_Background:1,
+    Orientation_LOTO_Completed: safety>=3.0?1:0, Orientation_PPE_Fitted:1,
+    Apprenticeship_Registered: parseInt(document.getElementById(p+'Apprenticeship_Registered').value),
+  };
+}
+
+function setLoading(on) {
+  const btn = document.getElementById('submitBtn');
+  const txt = document.getElementById('btnText');
+  const spn = document.getElementById('btnSpinner');
+  const cBtn = document.getElementById('compareBtnMain');
+  const cTxt = document.getElementById('compareBtnText');
+  const cSpn = document.getElementById('compareBtnSpinner');
+  btn.disabled = cBtn.disabled = on;
+  txt.style.display = on?'none':'block';
+  spn.style.display = on?'block':'none';
+  cTxt.style.display = on?'none':'block';
+  cSpn.style.display = on?'block':'none';
+}
+
+async function runPrediction() {
+  setLoading(true);
+  ['scoreCard','candInfo','aiCard','errorCard'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('visible');
+  });
+  document.getElementById('emptyResults').style.display = 'none';
+  document.getElementById('aiLoading').classList.remove('visible');
+
+  try {
+    if (compareMode) { await runCompare(); }
+    else             { await runSingle(); }
+  } catch(err) {
+    document.getElementById('errorMsg').textContent = err.message;
+    document.getElementById('errorCard').classList.add('visible');
+  } finally { setLoading(false); }
+}
+
+async function runSingle() {
+  const payload = buildPayload('');
+  const res = await fetch(API_BASE+'/predict', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(`API returned ${res.status}`);
+  const data = await res.json();
+  renderResults(data, payload, 'scoreCard', 'candInfo');
+  await runExplain(payload, data);
+}
+
+async function runCompare() {
+  const pA = buildPayload(''), pB = buildPayload('B_');
+  const res = await fetch(API_BASE+'/compare', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ candidate_a: pA, candidate_b: pB })
+  });
+  if (!res.ok) throw new Error(`Compare API returned ${res.status}`);
+  const data = await res.json();
+
+  document.getElementById('emptyA').style.display = 'none';
+  document.getElementById('emptyB').style.display = 'none';
+  renderResults(data.candidate_a, pA, 'scoreCardA', 'candInfoA');
+  renderResults(data.candidate_b, pB, 'scoreCardB', 'candInfoB');
+
+  const winner = document.getElementById('compareWinner');
+  winner.style.display = 'block';
+  document.getElementById('winnerBadge').innerHTML =
+    `<div style="background:linear-gradient(135deg,var(--blue),var(--teal));border-radius:10px;padding:7px 14px;font-size:12px;font-weight:600;display:inline-block;">✦ Candidate ${data.recommended} Recommended</div>`;
+  document.getElementById('compareCommentary').textContent = data.comparison;
+}
+
+async function runExplain(payload, predData) {
+  document.getElementById('aiLoading').classList.add('visible');
+  try {
+    const shapFactors = {};
+    for (const [k,v] of Object.entries(predData.predictions)) shapFactors[k] = v.shap_factors||[];
+    const res = await fetch(API_BASE+'/explain', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        candidate: payload,
+        predictions: { ...predData.predictions, overall_tier: predData.candidate_summary.overall_tier },
+        cohort: predData.cohort, shap_factors: shapFactors,
+      })
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const card = document.getElementById('aiCard');
+    card.innerHTML = `
+      <div class="ai-header"><div class="ai-gem">✦</div><div class="ai-title">AI Candidate Summary</div></div>
+      <div class="ai-text">${data.summary}</div>
+      <button class="plan-toggle" onclick="togglePlan(this)">
+        <span>90-Day Onboarding Plan</span><span id="planArrow">▼</span>
+      </button>
+      <div class="plan-content" id="planContent">
+        <div class="plan-text">${data.onboarding_plan}</div>
+      </div>`;
+    card.classList.add('visible');
+  } catch(e) { console.warn('AI explain failed'); }
+  finally { document.getElementById('aiLoading').classList.remove('visible'); }
+}
+
+function togglePlan(btn) {
+  const plan = document.getElementById('planContent');
+  const open = plan.classList.toggle('visible');
+  btn.querySelector('span:last-child').textContent = open ? '▲' : '▼';
+}
+
+function tierClass(tier) {
+  if (tier==='Low') return 'low'; if (tier==='Medium') return 'med'; return 'high';
+}
+function overallTierClass(tier) {
+  if (tier==='Low Risk') return 'low'; if (tier==='Medium Risk') return 'med'; return 'high';
+}
+
+function renderResults(data, payload, scoreId, infoId) {
+  const s = data.candidate_summary, p = data.predictions;
+  const tc = overallTierClass(s.overall_tier);
+  const ringColors = {low:'#059669',med:'#D97706',high:'#DC2626'};
+  const tierBg     = {low:'#D1FAE5',med:'#FEF3C7',high:'#FEE2E2'};
+  const tierFg     = {low:'#059669',med:'#D97706',high:'#DC2626'};
+  const barColors  = {low:'linear-gradient(90deg,#059669,#34D399)',med:'linear-gradient(90deg,#D97706,#FCD34D)',high:'linear-gradient(90deg,#DC2626,#F87171)'};
+  const circ = 326.7, offset = circ - (s.overall_score/100)*circ;
+
+  const predMap = [
+    {key:'retention',label:'Retention (1-Year)',icon:'📋'},
+    {key:'safety',   label:'Safety Risk',       icon:'⚠️'},
+    {key:'promotion',label:'Promotion (24mo)',  icon:'📈'},
+  ];
+
+  const predsHTML = predMap.map(({key,label,icon}) => {
+    const pred=p[key], ptc=tierClass(pred.risk_tier);
+    const shapHTML = pred.shap_factors&&pred.shap_factors.length>0 ? `
+      <div class="shap-factors">
+        <div class="shap-title">Key Factors</div>
+        ${pred.shap_factors.map(f => {
+          const pos = (key==='safety'&&f.direction==='decreases')||(key!=='safety'&&f.direction==='increases');
+          return `<div class="shap-item"><span style="color:${pos?'#34D399':'#F87171'};font-weight:600;">${pos?'✓':'!'}</span> ${f.label} ${key==='safety'?(f.direction==='decreases'?'reduces':'elevates')+' incident risk':f.direction==='increases'?(key==='retention'?'supports retention':'supports promotion'):(key==='retention'?'is a retention risk factor':'may limit promotion')}</div>`;
+        }).join('')}
+      </div>` : '';
+    return `
+      <div class="pred-row">
+        <div class="pred-header">
+          <div class="pred-name">${icon} ${label}</div>
+          <div class="pred-tier" style="background:${tierBg[ptc]};color:${tierFg[ptc]};">${pred.risk_tier} Risk</div>
+        </div>
+        <div class="pred-bar-track"><div class="pred-bar-fill" style="background:${barColors[ptc]};width:${pred.score}%;"></div></div>
+        <div class="pred-meta"><span>Score: ${pred.score}/100</span><span>Probability: ${(pred.probability*100).toFixed(1)}%</span></div>
+        ${shapHTML}
+      </div>`;
+  }).join('');
+
+  const cohortHTML = data.cohort ? `
+    <div class="cohort-banner">
+      <div><div class="cohort-lbl">Cohort Ranking</div><div class="cohort-txt">${data.cohort.description}</div></div>
+      <div class="cohort-pct">${data.cohort.percentile}th</div>
+    </div>` : '';
+
+  const card = document.getElementById(scoreId);
+  card.innerHTML = `
+    <div class="overall-section">
+      <div class="overall-label">Overall Composite Score</div>
+      <div class="ring-wrap">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8" cx="60" cy="60" r="52"/>
+          <circle fill="none" stroke="${ringColors[tc]}" stroke-width="8" stroke-linecap="round" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="${offset}"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-value">${s.overall_score.toFixed(1)}</div>
+          <div class="ring-max">/ 100</div>
+        </div>
+      </div>
+      <div class="overall-tier-badge tier-${tc}">
+        <span class="tier-dot dot-${tc}"></span>${s.overall_tier}
+      </div>
+    </div>
+    ${cohortHTML}
+    <div class="predictions-list">${predsHTML}</div>`;
+  card.classList.add('visible');
+
+  // Candidate info
+  const rows = [
+    ['SOC Role', SOC_LABELS[s.soc_code]||s.soc_code],
+    ['PI Score', s.pi_score.toFixed(1)],
+    ['Age', payload.Age], ['Education', payload.EducationLevel],
+    ['State', payload.State],
+    ['Attendance', (payload.AttendanceRate*100).toFixed(0)+'%'],
+    ['Safety Score', payload.SafetyCommitmentScore.toFixed(1)+' / 5'],
+    ['Training Hrs', payload.TotalTrainingHours.toLocaleString()],
+    ['Prior Exp', payload.HasPriorTradeExperience?'Yes':'No'],
+    ['Veteran', payload.VeteranStatus?'Yes':'No'],
+  ];
+  const infoEl = document.getElementById(infoId);
+  infoEl.innerHTML = `<div class="form-section-title" style="margin-bottom:10px;">Candidate Summary</div>`+
+    rows.map(([l,v]) => `<div class="info-row"><span class="info-label">${l}</span><span class="info-value">${v}</span></div>`).join('');
+  infoEl.classList.add('visible');
+}
+</script>
+{% endblock %}
