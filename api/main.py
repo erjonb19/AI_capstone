@@ -556,7 +556,7 @@ Training Hours: {c.TotalTrainingHours:,}
 Generate the plan:"""
 
     summary = call_gemini(summary_prompt, max_tokens=400)
-    plan    = call_gemini(plan_prompt,    max_tokens=1024)
+    plan    = call_gemini(plan_prompt,    max_tokens=2048)
 
     return {"summary": summary, "onboarding_plan": plan}
 
