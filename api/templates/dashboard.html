@@ -1,0 +1,717 @@
+{% extends "base.html" %}
+
+{% block title %}Readiness Overview{% endblock %}
+{% block topbar_title %}Readiness Overview — Mission Control{% endblock %}
+
+{% block extra_styles %}
+.filter-bar {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 28px; flex-wrap: wrap;
+}
+
+.filter-select {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; padding: 9px 14px;
+  color: var(--white);
+  font-family: 'Outfit', sans-serif; font-size: 13px;
+  outline: none; cursor: pointer; transition: all 0.2s;
+  min-width: 160px;
+}
+
+.filter-select:focus {
+  border-color: var(--blue);
+  background: rgba(37,99,235,0.08);
+}
+
+.filter-select option { background: #0F2035; }
+
+.filter-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--slate);
+}
+
+/* Donut chart container */
+.donut-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.donut-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.donut-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--slate); margin-bottom: 20px; align-self: flex-start;
+}
+
+.donut-wrap {
+  position: relative; width: 140px; height: 140px;
+  margin-bottom: 20px;
+}
+
+.donut-wrap svg { transform: rotate(-90deg); }
+
+.donut-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+.donut-pct {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px; color: var(--white); line-height: 1;
+}
+
+.donut-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; color: var(--slate); letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+.donut-legend {
+  width: 100%; display: flex; flex-direction: column; gap: 6px;
+}
+
+.legend-row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px;
+}
+
+.legend-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 8px; flex-shrink: 0;
+}
+
+.legend-label {
+  display: flex; align-items: center;
+  color: var(--slate-light); flex: 1;
+}
+
+.legend-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--slate);
+}
+
+/* Skill gap bars */
+.skill-gap-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.skill-row {
+  margin-bottom: 16px;
+}
+
+.skill-header {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 6px;
+}
+
+.skill-name {
+  font-size: 13px; font-weight: 500; color: var(--slate-light);
+}
+
+.skill-score {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--slate);
+}
+
+.skill-bar-track {
+  height: 6px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 3px; overflow: hidden;
+}
+
+.skill-bar-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease;
+}
+
+/* Top candidates table */
+.candidates-table-wrap {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.table-header-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.table-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--slate);
+}
+
+/* Alert banner */
+.alert-banner {
+  background: rgba(220,38,38,0.07);
+  border: 1px solid rgba(220,38,38,0.18);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 28px;
+}
+
+.alert-icon { font-size: 18px; }
+.alert-text { font-size: 13px; color: #FCA5A5; line-height: 1.5; }
+.alert-count {
+  margin-left: auto;
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px; color: var(--high);
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-eyebrow">Mission Control</div>
+  <h1 class="page-title">Readiness Overview</h1>
+  <p class="page-subtitle">Real-time risk distribution across your candidate cohort. Filter by role or region.</p>
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+  <span class="filter-label">Filter by</span>
+  <select class="filter-select" id="roleFilter" onchange="applyFilters()">
+    <option value="all">All Roles</option>
+    <option value="49-9051.00">Power Line Installer/Repairer</option>
+    <option value="49-2022.00">Telecom Equipment Installer</option>
+    <option value="51-8013.00">Power Plant Operator</option>
+    <option value="51-8031.00">Water/Wastewater Treatment Op.</option>
+    <option value="51-8092.00">Gas Plant Operator</option>
+    <option value="43-5041.00">Meter Reader, Utilities</option>
+  </select>
+  <select class="filter-select" id="regionFilter" onchange="applyFilters()">
+    <option value="all">All Regions</option>
+    <option value="northeast">Northeast</option>
+    <option value="southeast">Southeast</option>
+    <option value="midwest">Midwest</option>
+    <option value="southwest">Southwest</option>
+    <option value="west">West</option>
+  </select>
+  <select class="filter-select" id="tierFilter" onchange="applyFilters()">
+    <option value="all">All Risk Tiers</option>
+    <option value="low">Low Risk</option>
+    <option value="medium">Medium Risk</option>
+    <option value="high">High Risk</option>
+  </select>
+</div>
+
+<!-- Stat cards -->
+<div class="stat-grid" id="statGrid">
+  <div class="stat-card">
+    <div class="stat-label">Total Candidates</div>
+    <div class="stat-value" id="statTotal">—</div>
+    <div class="stat-sub">In current cohort</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Low Risk</div>
+    <div class="stat-value" style="color:var(--low)" id="statLow">—</div>
+    <div class="stat-sub">Field ready</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Medium Risk</div>
+    <div class="stat-value" style="color:var(--med)" id="statMed">—</div>
+    <div class="stat-sub">Needs mentoring</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">High Risk</div>
+    <div class="stat-value" style="color:var(--high)" id="statHigh">—</div>
+    <div class="stat-sub">Needs intervention</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Avg Composite Score</div>
+    <div class="stat-value" id="statAvg">—</div>
+    <div class="stat-sub">Out of 100</div>
+  </div>
+</div>
+
+<!-- High risk alert -->
+<div class="alert-banner" id="alertBanner" style="display:none;">
+  <span class="alert-icon">⚠</span>
+  <div class="alert-text">
+    <strong>High-Risk Candidates Detected</strong><br>
+    The following candidates require immediate review before placement.
+  </div>
+  <div class="alert-count" id="alertCount">0</div>
+</div>
+
+<!-- Donut charts -->
+<div class="donut-grid">
+  <div class="donut-card">
+    <div class="donut-title">Overall Risk Distribution</div>
+    <div class="donut-wrap">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="16"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#059669" stroke-width="16"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          id="donutLow" stroke-linecap="butt" style="transition:stroke-dashoffset 1s ease;"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#D97706" stroke-width="16"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          id="donutMed" stroke-linecap="butt" style="transition:stroke-dashoffset 1s ease;"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#DC2626" stroke-width="16"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          id="donutHigh" stroke-linecap="butt" style="transition:stroke-dashoffset 1s ease;"/>
+      </svg>
+      <div class="donut-center">
+        <div class="donut-pct" id="donutPct">—</div>
+        <div class="donut-sub">LOW RISK</div>
+      </div>
+    </div>
+    <div class="donut-legend">
+      <div class="legend-row">
+        <div class="legend-label"><div class="legend-dot" style="background:#059669"></div>Low Risk</div>
+        <div class="legend-count" id="legendLow">—</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-label"><div class="legend-dot" style="background:#D97706"></div>Medium Risk</div>
+        <div class="legend-count" id="legendMed">—</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-label"><div class="legend-dot" style="background:#DC2626"></div>High Risk</div>
+        <div class="legend-count" id="legendHigh">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="donut-card">
+    <div class="donut-title">Retention Risk</div>
+    <div class="donut-wrap">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="16"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#059669" stroke-width="16"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          id="retDonutLow" style="transition:stroke-dashoffset 1s ease;"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#D97706" stroke-width="16"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          id="retDonutMed" style="transition:stroke-dashoffset 1s ease;"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#DC2626" stroke-width="16"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          id="retDonutHigh" style="transition:stroke-dashoffset 1s ease;"/>
+      </svg>
+      <div class="donut-center">
+        <div class="donut-pct" id="retDonutPct">—</div>
+        <div class="donut-sub">LOW RISK</div>
+      </div>
+    </div>
+    <div class="donut-legend">
+      <div class="legend-row">
+        <div class="legend-label"><div class="legend-dot" style="background:#059669"></div>Low Risk</div>
+        <div class="legend-count" id="retLegendLow">—</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-label"><div class="legend-dot" style="background:#D97706"></div>Medium Risk</div>
+        <div class="legend-count" id="retLegendMed">—</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-label"><div class="legend-dot" style="background:#DC2626"></div>High Risk</div>
+        <div class="legend-count" id="retLegendHigh">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="donut-card">
+    <div class="donut-title">Safety Risk</div>
+    <div class="donut-wrap">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="16"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#059669" stroke-width="16"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          id="safDonutLow" style="transition:stroke-dashoffset 1s ease;"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#D97706" stroke-width="16"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          id="safDonutMed" style="transition:stroke-dashoffset 1s ease;"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#DC2626" stroke-width="16"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          id="safDonutHigh" style="transition:stroke-dashoffset 1s ease;"/>
+      </svg>
+      <div class="donut-center">
+        <div class="donut-pct" id="safDonutPct">—</div>
+        <div class="donut-sub">LOW RISK</div>
+      </div>
+    </div>
+    <div class="donut-legend">
+      <div class="legend-row">
+        <div class="legend-label"><div class="legend-dot" style="background:#059669"></div>Low Risk</div>
+        <div class="legend-count" id="safLegendLow">—</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-label"><div class="legend-dot" style="background:#D97706"></div>Medium Risk</div>
+        <div class="legend-count" id="safLegendMed">—</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-label"><div class="legend-dot" style="background:#DC2626"></div>High Risk</div>
+        <div class="legend-count" id="safLegendHigh">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="donut-card">
+    <div class="donut-title">Promotion Potential</div>
+    <div class="donut-wrap">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="16"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#059669" stroke-width="16"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          id="proDonutLow" style="transition:stroke-dashoffset 1s ease;"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#D97706" stroke-width="16"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          id="proDonutMed" style="transition:stroke-dashoffset 1s ease;"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#DC2626" stroke-width="16"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          id="proDonutHigh" style="transition:stroke-dashoffset 1s ease;"/>
+      </svg>
+      <div class="donut-center">
+        <div class="donut-pct" id="proDonutPct">—</div>
+        <div class="donut-sub">LOW RISK</div>
+      </div>
+    </div>
+    <div class="donut-legend">
+      <div class="legend-row">
+        <div class="legend-label"><div class="legend-dot" style="background:#059669"></div>Low Risk</div>
+        <div class="legend-count" id="proLegendLow">—</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-label"><div class="legend-dot" style="background:#D97706"></div>Medium Risk</div>
+        <div class="legend-count" id="proLegendMed">—</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-label"><div class="legend-dot" style="background:#DC2626"></div>High Risk</div>
+        <div class="legend-count" id="proLegendHigh">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Skill gap analysis -->
+<div class="skill-gap-card">
+  <div class="card-title">Skill Gap Analysis — Average Scores by Category</div>
+  <div id="skillGapBars">
+    <div class="skill-row">
+      <div class="skill-header">
+        <span class="skill-name">Cognitive Score</span>
+        <span class="skill-score" id="skillCog">—</span>
+      </div>
+      <div class="skill-bar-track">
+        <div class="skill-bar-fill" id="barCog" style="width:0%;background:linear-gradient(90deg,var(--blue),var(--blue-light));"></div>
+      </div>
+    </div>
+    <div class="skill-row">
+      <div class="skill-header">
+        <span class="skill-name">Behavioral Score</span>
+        <span class="skill-score" id="skillBeh">—</span>
+      </div>
+      <div class="skill-bar-track">
+        <div class="skill-bar-fill" id="barBeh" style="width:0%;background:linear-gradient(90deg,var(--blue),var(--blue-light));"></div>
+      </div>
+    </div>
+    <div class="skill-row">
+      <div class="skill-header">
+        <span class="skill-name">Situational Score</span>
+        <span class="skill-score" id="skillSit">—</span>
+      </div>
+      <div class="skill-bar-track">
+        <div class="skill-bar-fill" id="barSit" style="width:0%;background:linear-gradient(90deg,var(--blue),var(--blue-light));"></div>
+      </div>
+    </div>
+    <div class="skill-row">
+      <div class="skill-header">
+        <span class="skill-name">Simulation Score</span>
+        <span class="skill-score" id="skillSim">—</span>
+      </div>
+      <div class="skill-bar-track">
+        <div class="skill-bar-fill" id="barSim" style="width:0%;background:linear-gradient(90deg,var(--teal),var(--teal-light));"></div>
+      </div>
+    </div>
+    <div class="skill-row">
+      <div class="skill-header">
+        <span class="skill-name">Safety Commitment</span>
+        <span class="skill-score" id="skillSaf">—</span>
+      </div>
+      <div class="skill-bar-track">
+        <div class="skill-bar-fill" id="barSaf" style="width:0%;background:linear-gradient(90deg,var(--teal),var(--teal-light));"></div>
+      </div>
+    </div>
+    <div class="skill-row">
+      <div class="skill-header">
+        <span class="skill-name">Attendance Rate</span>
+        <span class="skill-score" id="skillAtt">—</span>
+      </div>
+      <div class="skill-bar-track">
+        <div class="skill-bar-fill" id="barAtt" style="width:0%;background:linear-gradient(90deg,#059669,#34D399);"></div>
+      </div>
+    </div>
+    <div class="skill-row" style="margin-bottom:0;">
+      <div class="skill-header">
+        <span class="skill-name">Sorvex 360 PI Score</span>
+        <span class="skill-score" id="skillPi">—</span>
+      </div>
+      <div class="skill-bar-track">
+        <div class="skill-bar-fill" id="barPi" style="width:0%;background:linear-gradient(90deg,#7C3AED,#A78BFA);"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Top candidates table -->
+<div class="candidates-table-wrap">
+  <div class="table-header-row">
+    <div class="table-title">Top Candidates by Composite Score</div>
+    <a href="/candidates" class="btn-secondary" style="font-size:12px;padding:7px 14px;">
+      View All →
+    </a>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Role</th>
+        <th>Age</th>
+        <th>Composite Score</th>
+        <th>Overall Tier</th>
+        <th>Retention</th>
+        <th>Safety</th>
+        <th>Promotion</th>
+        <th>Cohort</th>
+      </tr>
+    </thead>
+    <tbody id="topCandidatesBody">
+      <tr>
+        <td colspan="9" style="text-align:center;padding:32px;color:var(--slate);">
+          No batch data loaded yet. <a href="/upload" style="color:var(--blue-light);">Upload candidates →</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const SOC_LABELS = {
+  '49-9051.00':'Power Line Installer/Repairer',
+  '49-2022.00':'Telecom Equipment Installer',
+  '51-8013.00':'Power Plant Operator',
+  '51-8031.00':'Water/Wastewater Treatment Op.',
+  '51-8092.00':'Gas Plant Operator',
+  '43-5041.00':'Meter Reader, Utilities',
+};
+
+// Load batch results from sessionStorage if available
+let allCandidates = [];
+try {
+  const stored = sessionStorage.getItem('sorvex_batch_results');
+  if (stored) allCandidates = JSON.parse(stored);
+} catch(e) {}
+
+function applyFilters() {
+  const role   = document.getElementById('roleFilter').value;
+  const tier   = document.getElementById('tierFilter').value;
+
+  let filtered = allCandidates.filter(c => {
+    if (!c.data) return false;
+    const s = c.data.candidate_summary;
+    if (role !== 'all' && s.soc_code !== role) return false;
+    if (tier !== 'all') {
+      const t = s.overall_tier.toLowerCase();
+      if (tier === 'low' && !t.includes('low')) return false;
+      if (tier === 'medium' && !t.includes('medium')) return false;
+      if (tier === 'high' && !t.includes('high')) return false;
+    }
+    return true;
+  });
+
+  renderDashboard(filtered);
+}
+
+function renderDashboard(candidates) {
+  const total = candidates.length;
+
+  if (total === 0) {
+    setStats(0, 0, 0, 0, 0);
+    renderEmptyDonuts();
+    renderEmptySkillGap();
+    return;
+  }
+
+  // Tier counts
+  let low = 0, med = 0, high = 0;
+  let retLow = 0, retMed = 0, retHigh = 0;
+  let safLow = 0, safMed = 0, safHigh = 0;
+  let proLow = 0, proMed = 0, proHigh = 0;
+
+  let sumScore = 0, sumCog = 0, sumBeh = 0, sumSit = 0, sumSim = 0;
+  let sumSaf = 0, sumAtt = 0, sumPi = 0;
+
+  candidates.forEach(c => {
+    const s = c.data.candidate_summary;
+    const p = c.data.predictions;
+    const pl = c.payload;
+
+    sumScore += s.overall_score;
+    if (s.overall_tier.includes('Low'))    low++;
+    else if (s.overall_tier.includes('Medium')) med++;
+    else high++;
+
+    const rt = p.retention.risk_tier;
+    if (rt === 'Low') retLow++; else if (rt === 'Medium') retMed++; else retHigh++;
+    const st = p.safety.risk_tier;
+    if (st === 'Low') safLow++; else if (st === 'Medium') safMed++; else safHigh++;
+    const pt = p.promotion.risk_tier;
+    if (pt === 'Low') proLow++; else if (pt === 'Medium') proMed++; else proHigh++;
+
+    sumCog += pl.CognitiveScore || 0;
+    sumBeh += pl.BehavioralScore || 0;
+    sumSit += pl.SituationalScore || 0;
+    sumSim += pl.SimulationScore || 0;
+    sumSaf += (pl.SafetyCommitmentScore || 0) * 20; // scale 1-5 to 0-100
+    sumAtt += (pl.AttendanceRate || 0) * 100;
+    sumPi  += pl.Sorvex360PI_Score || 0;
+  });
+
+  const avg = sumScore / total;
+  setStats(total, low, med, high, avg);
+
+  // Alert
+  const alertBanner = document.getElementById('alertBanner');
+  if (high > 0) {
+    alertBanner.style.display = 'flex';
+    document.getElementById('alertCount').textContent = high;
+  } else {
+    alertBanner.style.display = 'none';
+  }
+
+  // Donuts
+  renderDonut('donutLow','donutMed','donutHigh','donutPct','legendLow','legendMed','legendHigh', low, med, high, total);
+  renderDonut('retDonutLow','retDonutMed','retDonutHigh','retDonutPct','retLegendLow','retLegendMed','retLegendHigh', retLow, retMed, retHigh, total);
+  renderDonut('safDonutLow','safDonutMed','safDonutHigh','safDonutPct','safLegendLow','safLegendMed','safLegendHigh', safLow, safMed, safHigh, total);
+  renderDonut('proDonutLow','proDonutMed','proDonutHigh','proDonutPct','proLegendLow','proLegendMed','proLegendHigh', proLow, proMed, proHigh, total);
+
+  // Skill gap
+  const skills = [
+    ['skillCog','barCog', sumCog/total],
+    ['skillBeh','barBeh', sumBeh/total],
+    ['skillSit','barSit', sumSit/total],
+    ['skillSim','barSim', sumSim/total],
+    ['skillSaf','barSaf', sumSaf/total],
+    ['skillAtt','barAtt', sumAtt/total],
+    ['skillPi', 'barPi',  sumPi/total],
+  ];
+  setTimeout(() => {
+    skills.forEach(([lblId, barId, val]) => {
+      document.getElementById(lblId).textContent = val.toFixed(1);
+      document.getElementById(barId).style.width = val + '%';
+    });
+  }, 200);
+
+  // Top candidates table
+  const sorted = [...candidates].sort((a,b) =>
+    b.data.candidate_summary.overall_score - a.data.candidate_summary.overall_score
+  ).slice(0, 10);
+
+  const tbody = document.getElementById('topCandidatesBody');
+  tbody.innerHTML = '';
+  sorted.forEach((c, idx) => {
+    const s = c.data.candidate_summary;
+    const p = c.data.predictions;
+    const tc = s.overall_tier.includes('Low') ? 'low' : s.overall_tier.includes('Medium') ? 'med' : 'high';
+    const tierColors = { low:'#059669', med:'#D97706', high:'#DC2626' };
+    const tierBg = { low:'#D1FAE5', med:'#FEF3C7', high:'#FEE2E2' };
+    const rtc = p.retention.risk_tier === 'Low' ? 'low' : p.retention.risk_tier === 'Medium' ? 'med' : 'high';
+    const stc = p.safety.risk_tier === 'Low' ? 'low' : p.safety.risk_tier === 'Medium' ? 'med' : 'high';
+    const ptc = p.promotion.risk_tier === 'Low' ? 'low' : p.promotion.risk_tier === 'Medium' ? 'med' : 'high';
+
+    tbody.innerHTML += `
+      <tr>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--slate);">${idx+1}</td>
+        <td style="color:var(--white);font-weight:500;">${SOC_LABELS[s.soc_code] || s.soc_code}</td>
+        <td>${c.payload.Age}</td>
+        <td style="font-family:'DM Serif Display',serif;font-size:20px;color:${tierColors[tc]};">${s.overall_score.toFixed(1)}</td>
+        <td><span style="background:${tierBg[tc]};color:${tierColors[tc]};padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;">${s.overall_tier}</span></td>
+        <td><span style="color:${tierColors[rtc]};font-size:12px;font-weight:600;">${p.retention.risk_tier}</span></td>
+        <td><span style="color:${tierColors[stc]};font-size:12px;font-weight:600;">${p.safety.risk_tier}</span></td>
+        <td><span style="color:${tierColors[ptc]};font-size:12px;font-weight:600;">${p.promotion.risk_tier}</span></td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--blue-light);">${c.data.cohort ? c.data.cohort.percentile+'th' : '—'}</td>
+      </tr>`;
+  });
+}
+
+function setStats(total, low, med, high, avg) {
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statLow').textContent   = low;
+  document.getElementById('statMed').textContent   = med;
+  document.getElementById('statHigh').textContent  = high;
+  document.getElementById('statAvg').textContent   = total > 0 ? avg.toFixed(1) : '—';
+}
+
+function renderDonut(lowId, medId, highId, pctId, legLowId, legMedId, legHighId, low, med, high, total) {
+  const circ = 339.3;
+  const lowPct  = total > 0 ? low/total  : 0;
+  const medPct  = total > 0 ? med/total  : 0;
+  const highPct = total > 0 ? high/total : 0;
+
+  const lowDash  = circ * lowPct;
+  const medDash  = circ * medPct;
+  const highDash = circ * highPct;
+
+  // Stacked donut offsets
+  const lowOffset  = circ - lowDash;
+  const medOffset  = circ - medDash;
+  const highOffset = circ - highDash;
+
+  setTimeout(() => {
+    const lEl = document.getElementById(lowId);
+    const mEl = document.getElementById(medId);
+    const hEl = document.getElementById(highId);
+
+    // Rotate each segment
+    lEl.style.strokeDashoffset = lowOffset;
+    lEl.parentElement.style.setProperty('--low-rotate', '0deg');
+
+    mEl.style.strokeDashoffset = medOffset;
+    mEl.setAttribute('transform', `rotate(${lowPct * 360} 70 70)`);
+
+    hEl.style.strokeDashoffset = highOffset;
+    hEl.setAttribute('transform', `rotate(${(lowPct + medPct) * 360} 70 70)`);
+
+    document.getElementById(pctId).textContent = total > 0 ? Math.round(lowPct * 100) + '%' : '—';
+    document.getElementById(legLowId).textContent  = low;
+    document.getElementById(legMedId).textContent  = med;
+    document.getElementById(legHighId).textContent = high;
+  }, 200);
+}
+
+function renderEmptyDonuts() {
+  ['donutPct','retDonutPct','safDonutPct','proDonutPct'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+  });
+}
+
+function renderEmptySkillGap() {
+  ['skillCog','skillBeh','skillSit','skillSim','skillSaf','skillAtt','skillPi'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+  });
+}
+
+// Initial render
+renderDashboard(allCandidates);
+</script>
+{% endblock %}
