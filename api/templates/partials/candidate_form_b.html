@@ -1,0 +1,70 @@
+<!-- Candidate B Form Fields (B_ prefix on all IDs) -->
+<div class="form-section">
+  <div class="form-section-title">01 — Role & Demographics</div>
+  <div class="form-grid">
+    <div class="form-group full">
+      <label>Role</label>
+      <select id="B_SOC_Code">
+        <option value="49-9051.00">Power Line Installer/Repairer</option>
+        <option value="49-2022.00">Telecom Equipment Installer</option>
+        <option value="51-8013.00" selected>Power Plant Operator</option>
+        <option value="51-8031.00">Water/Wastewater Treatment Operator</option>
+        <option value="51-8092.00">Gas Plant Operator</option>
+        <option value="43-5041.00">Meter Reader, Utilities</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Age</label><input type="number" id="B_Age" value="29" min="18" max="65"></div>
+    <div class="form-group"><label>Gender</label><select id="B_Gender"><option value="Male">Male</option><option value="Female" selected>Female</option><option value="Other">Other</option></select></div>
+    <div class="form-group"><label>State</label><select id="B_State"><option value="AL">Alabama</option><option value="AK">Alaska</option><option value="AZ">Arizona</option><option value="AR">Arkansas</option><option value="CA" selected>California</option><option value="CO">Colorado</option><option value="CT">Connecticut</option><option value="DE">Delaware</option><option value="FL">Florida</option><option value="GA">Georgia</option><option value="HI">Hawaii</option><option value="ID">Idaho</option><option value="IL">Illinois</option><option value="IN">Indiana</option><option value="IA">Iowa</option><option value="KS">Kansas</option><option value="KY">Kentucky</option><option value="LA">Louisiana</option><option value="ME">Maine</option><option value="MD">Maryland</option><option value="MA">Massachusetts</option><option value="MI">Michigan</option><option value="MN">Minnesota</option><option value="MS">Mississippi</option><option value="MO">Missouri</option><option value="MT">Montana</option><option value="NE">Nebraska</option><option value="NV">Nevada</option><option value="NH">New Hampshire</option><option value="NJ">New Jersey</option><option value="NM">New Mexico</option><option value="NY">New York</option><option value="NC">North Carolina</option><option value="ND">North Dakota</option><option value="OH">Ohio</option><option value="OK">Oklahoma</option><option value="OR">Oregon</option><option value="PA">Pennsylvania</option><option value="RI">Rhode Island</option><option value="SC">South Carolina</option><option value="SD">South Dakota</option><option value="TN">Tennessee</option><option value="TX">Texas</option><option value="UT">Utah</option><option value="VT">Vermont</option><option value="VA">Virginia</option><option value="WA">Washington</option><option value="WV">West Virginia</option><option value="WI">Wisconsin</option><option value="WY">Wyoming</option></select></div>
+    <div class="form-group"><label>Education Level</label><select id="B_EducationLevel"><option value="HS/GED">HS / GED</option><option value="Vocational Certificate">Vocational Certificate</option><option value="Associate Technical">Associate Technical</option><option value="Associate General">Associate General</option><option value="Bachelor's" selected>Bachelor's</option><option value="Apprenticeship">Apprenticeship</option></select></div>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section-title">02 — Assessment Scores (50–100)</div>
+  <div class="form-grid">
+    <div class="form-group full"><label>Cognitive Score</label><div class="score-group"><input type="range" id="B_CognitiveScore" min="50" max="100" value="78" oninput="updateBadge('B_CognitiveScore','B_cog-badge')"><div class="score-badge" id="B_cog-badge">78</div></div></div>
+    <div class="form-group full"><label>Behavioral Score</label><div class="score-group"><input type="range" id="B_BehavioralScore" min="50" max="100" value="74" oninput="updateBadge('B_BehavioralScore','B_beh-badge')"><div class="score-badge" id="B_beh-badge">74</div></div></div>
+    <div class="form-group full"><label>Situational Score</label><div class="score-group"><input type="range" id="B_SituationalScore" min="50" max="100" value="73" oninput="updateBadge('B_SituationalScore','B_sit-badge')"><div class="score-badge" id="B_sit-badge">73</div></div></div>
+    <div class="form-group full"><label>Simulation Score</label><div class="score-group"><input type="range" id="B_SimulationScore" min="50" max="100" value="75" oninput="updateBadge('B_SimulationScore','B_sim-badge')"><div class="score-badge" id="B_sim-badge">75</div></div></div>
+    <div class="form-group full"><label>Sorvex 360 PI Score</label><div class="score-group"><input type="range" id="B_Sorvex360PI_Score" min="0" max="100" value="72" step="0.5" oninput="updateBadge('B_Sorvex360PI_Score','B_pi-badge')"><div class="score-badge" id="B_pi-badge">72</div></div></div>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section-title">03 — Work History & Eligibility</div>
+  <div class="form-grid">
+    <div class="form-group"><label>Longest Job Tenure (yrs)</label><input type="number" id="B_LongestJobTenure" value="2.5" step="0.5" min="0"></div>
+    <div class="form-group"><label>Most Recent Industry</label><select id="B_MostRecentIndustry"><option value="Construction">Construction</option><option value="Utility" selected>Utility</option><option value="Manufacturing">Manufacturing</option><option value="Military">Military</option><option value="Other">Other</option></select></div>
+    <div class="form-group"><label>Prior Trade Experience</label><select id="B_HasPriorTradeExperience"><option value="1">Yes</option><option value="0" selected>No</option></select></div>
+    <div class="form-group"><label>Valid License</label><select id="B_HasValidLicense"><option value="1">Yes</option><option value="0">No</option></select></div>
+    <div class="form-group"><label>Can Pass Drug Screen</label><select id="B_CanPassDrugScreen"><option value="1">Yes</option><option value="0">No</option></select></div>
+    <div class="form-group"><label>Can Pass Background Check</label><select id="B_CanPassBackgroundCheck"><option value="1">Yes</option><option value="0">No</option></select></div>
+    <div class="form-group"><label>Veteran Status</label><select id="B_VeteranStatus"><option value="0">No</option><option value="1">Yes</option></select></div>
+    <div class="form-group"><label>CDL Status</label><select id="B_CDL_Status"><option value="0">No</option><option value="1">Yes</option></select></div>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section-title">04 — Source & Training</div>
+  <div class="form-grid">
+    <div class="form-group"><label>Training Source</label><select id="B_TrainingSource"><option value="IBEW JATC">IBEW JATC</option><option value="Trade Union">Trade Union</option><option value="Community College" selected>Community College</option><option value="Employer Program">Employer Program</option><option value="Military">Military</option><option value="Self-taught">Self-taught</option></select></div>
+    <div class="form-group"><label>Source of Candidate</label><select id="B_SourceOfCandidate"><option value="WorkforceProgram">Workforce Program</option><option value="SelfReferred" selected>Self Referred</option><option value="TradeUnion">Trade Union</option><option value="MilitaryTransition">Military Transition</option><option value="CommunityCollege">Community College</option><option value="Other">Other</option></select></div>
+    <div class="form-group"><label>Apprenticeship Interest</label><select id="B_ApprenticeshipInterest"><option value="1" selected>Yes</option><option value="0">No</option></select></div>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section-title phase2">05 — Training Program Outcomes</div>
+  <div class="phase2-note">📋 Primary drivers of Promotion and Safety predictions.</div>
+  <div class="form-grid">
+    <div class="form-group full"><label class="phase2-label">Attendance Rate</label><div class="score-group"><input type="range" class="teal-range" id="B_AttendanceRate" min="50" max="99" value="88" oninput="updateBadgeDecimal('B_AttendanceRate','B_att-badge')"><div class="score-badge teal" id="B_att-badge">0.88</div></div></div>
+    <div class="form-group full"><label class="phase2-label">Safety Commitment Score (1–5)</label><div class="score-group"><input type="range" class="teal-range" id="B_SafetyCommitmentScore" min="10" max="50" value="40" oninput="updateBadgeDecimal('B_SafetyCommitmentScore','B_safety-badge')"><div class="score-badge teal" id="B_safety-badge">4.0</div></div></div>
+    <div class="form-group"><label class="phase2-label">Total Training Hours</label><input type="number" class="phase2-input" id="B_TotalTrainingHours" value="5200" min="500" max="10000" step="100"></div>
+    <div class="form-group"><label class="phase2-label">Certifications Earned</label><input type="number" class="phase2-input" id="B_CertificationsEarned" value="3" min="0" max="6"></div>
+    <div class="form-group"><label class="phase2-label">Passed Required Modules</label><select class="phase2-input" id="B_PassedRequiredModules"><option value="1" selected>Yes</option><option value="0">No</option></select></div>
+    <div class="form-group"><label class="phase2-label">Physical Test Result</label><select class="phase2-input" id="B_PhysicalTestResult"><option value="1" selected>Pass</option><option value="0">Fail</option></select></div>
+    <div class="form-group"><label class="phase2-label">Union Status</label><select class="phase2-input" id="B_UnionStatus"><option value="0">No</option><option value="1" selected>Yes</option></select></div>
+    <div class="form-group"><label class="phase2-label">Apprenticeship Registered</label><select class="phase2-input" id="B_Apprenticeship_Registered"><option value="0">No</option><option value="1" selected>Yes</option></select></div>
+  </div>
+</div>
