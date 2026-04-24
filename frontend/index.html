@@ -1261,30 +1261,31 @@ document.querySelectorAll('.nav-link').forEach(link => {
 
   <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--blue-light);margin-bottom:16px;">About Sorvex 360</div>
   <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(28px,4vw,42px);margin-bottom:20px;background:linear-gradient(135deg,#fff 0%,#94A3B8 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Workforce Risk Intelligence<br><em>for the Utility Sector</em></h2>
-  <p style="font-size:16px;color:var(--slate);max-width:640px;line-height:1.7;margin-bottom:48px;font-weight:300;">Sorvex 360 is an AI-powered candidate screening platform built for utility workforce programs. It predicts 1-year retention, safety incident risk, and 24-month promotion potential using a CTGAN-trained synthetic dataset of 5,000 utility workforce profiles across six SOC codes.</p>
+  <p style="font-size:16px;color:var(--slate);max-width:640px;line-height:1.7;margin-bottom:48px;font-weight:300;">Sorvex 360 is an AI-powered candidate screening platform built for utility workforce programs. It predicts 1-year retention, safety incident risk, and 24-month promotion potential using a rule-based synthetic dataset of 10,000 utility workforce profiles across six roles.</p>
 
   <!-- Tech cards -->
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:48px;">
     <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;">
       <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue-light);margin-bottom:12px;">Model</div>
-      <div style="font-size:14px;color:var(--slate-light);line-height:1.6;">XGBoost classifiers trained on 5,000 synthetic profiles · SHAP explainability · Cohort percentile ranking<br><br><span style="color:var(--slate);font-size:12px;">SHAP explanations appear when feature importance exceeds the model's significance threshold — not all predictions will display key factors.</span></div>
+      <div style="font-size:14px;color:var(--slate-light);line-height:1.6;">HistGradientBoosting classifiers trained on 10,000 synthetic profiles · SHAP explainability · Cohort percentile ranking<br><br><span style="color:var(--slate);font-size:12px;">SHAP explanations appear when feature importance exceeds the model's significance threshold — not all predictions will display key factors.</span></div>
     </div>
     <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;">
       <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue-light);margin-bottom:12px;">Data</div>
-      <div style="font-size:14px;color:var(--slate-light);line-height:1.6;">CTGAN synthetic dataset · 6 utility SOC codes · Phase 1 pre-hire + Phase 2 training program features</div>
+      <div style="font-size:14px;color:var(--slate-light);line-height:1.6;">Rule-based synthetic dataset · 6 utility roles · Phase 1 pre-hire + Phase 2 training program features</div>
     </div>
     <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;">
       <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue-light);margin-bottom:12px;">Stack</div>
-      <div style="font-size:14px;color:var(--slate-light);line-height:1.6;">Python · FastAPI · Google Cloud Run · Gemini 2.5 Flash · Vertex AI · HTML / CSS / JS</div>
+      <div style="font-size:14px;color:var(--slate-light);line-height:1.6;">Python · FastAPI · Google Cloud Run · Gemini 2.5 Flash · Vertex AI · BigQuery · HTML / CSS / JS</div>
     </div>
     <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;">
       <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue-light);margin-bottom:12px;">Built By</div>
-      <div style="font-size:14px;color:var(--slate-light);line-height:1.6;">Independent portfolio project targeting Data Engineering · ML Engineering · AI Engineering roles</div>
+      <div style="font-size:14px;color:var(--slate-light);line-height:1.6;">Purdue AI/ML Capstone Project · Group L</div>
     </div>
   </div>
 
   <!-- SOC Roles -->
-  <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--teal);margin-bottom:20px;">Supported SOC Roles</div>
+  <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--teal);margin-bottom:16px;">Supported SOC Roles</div>
+<p style="font-size:14px;color:var(--slate);max-width:700px;line-height:1.7;margin-bottom:24px;font-weight:300;">SOC stands for Standard Occupational Classification — a federal system used by the U.S. Bureau of Labor Statistics to categorize workers into standardized job families. These six roles were selected because they represent the core skilled trades driving the utility workforce pipeline: high-voltage infrastructure, power generation, water and gas operations, telecommunications, and metering. Together they cover the most in-demand and hardest-to-fill positions across electric, gas, and water utilities.</p>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:48px;">
 
     <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;">
