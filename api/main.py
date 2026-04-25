@@ -1,11 +1,12 @@
-# Sorvex 360 Prediction API — v2.1
-# New in v2.0:
-#   - SHAP explainability on all three models (top 3 factors per prediction)
-#   - Cohort percentile benchmarking per SOC code
-#   - /explain endpoint: Gemini-powered natural language summary + 90-day onboarding plan
-#   - /compare endpoint: side-by-side candidate comparison with Gemini commentary
+# Sorvex 360 — v3.0
+# Adds: multi-page app, Jinja2 templates, session auth, role-based access
+# Keeps: all v2.1 prediction endpoints unchanged
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Form, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from google.cloud import storage
@@ -16,14 +17,18 @@ import shap
 import os
 import tempfile
 
+# ── App setup ─────────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="Sorvex 360 Prediction API",
-    description="Predicts retention, safety, and promotion risk for utility workforce candidates",
-    version="2.0.0"
+    title="Sorvex 360",
+    description="Predictive Workforce Intelligence — Utilities Sector",
+    version="3.0.0"
 )
 
-from fastapi.middleware.cors import CORSMiddleware
+# Session middleware — secret key for signing cookies
+SECRET_KEY = os.getenv("SECRET_KEY", "sorvex360-session-secret-change-in-prod")
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, max_age=86400)
 
+# CORS — keep open for existing frontend calls
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,9 +37,50 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-PROJECT_ID  = os.getenv("PROJECT_ID", "sorvex360-493312")
+# Jinja2 templates
+templates = Jinja2Templates(directory="templates")
+
+# ── Config ────────────────────────────────────────────────────────────────────
+PROJECT_ID  = os.getenv("PROJECT_ID",  "sorvex360-493312")
 BUCKET_NAME = os.getenv("BUCKET_NAME", "sorvex360-raw-data")
-REGION      = os.getenv("REGION", "us-central1")
+REGION      = os.getenv("REGION",      "us-central1")
+API_BASE    = os.getenv("API_BASE",    "https://sorvex360-predict-839675931790.us-central1.run.app")
+
+# ── Hardcoded users ───────────────────────────────────────────────────────────
+USERS = {
+    "admin":   {"password": "sorvex360",  "role": "admin",  "client": "Utility Corp A"},
+    "viewer":  {"password": "viewer123",  "role": "viewer", "client": "Utility Corp A"},
+    "clientb": {"password": "clientb123", "role": "viewer", "client": "Utility Corp B"},
+}
+
+# ── Auth helpers ──────────────────────────────────────────────────────────────
+def get_session(request: Request) -> dict:
+    return request.session.get("user", {})
+
+def require_auth(request: Request) -> Optional[RedirectResponse]:
+    """Returns a redirect if not authenticated, else None."""
+    if not request.session.get("user"):
+        return RedirectResponse(url="/login", status_code=302)
+    return None
+
+def require_admin(request: Request) -> Optional[RedirectResponse]:
+    """Returns a redirect if not admin."""
+    user = request.session.get("user", {})
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    if user.get("role") != "admin":
+        return RedirectResponse(url="/dashboard", status_code=302)
+    return None
+
+def render_page(request: Request, template: str, active_page: str, **kwargs):
+    """Helper to render a protected page with common context."""
+    return templates.TemplateResponse(template, {
+        "request":      request,
+        "session":      get_session(request),
+        "active_page":  active_page,
+        "api_base":     API_BASE,
+        **kwargs
+    })
 
 # ── Model + SHAP cache ────────────────────────────────────────────────────────
 models          = {}
@@ -48,9 +94,9 @@ def load_models():
     storage_client = storage.Client(project=PROJECT_ID)
     bucket = storage_client.bucket(BUCKET_NAME)
     model_files = {
-        "retention":  "models/retention/model.joblib",
-        "safety":     "models/safety/model.joblib",
-        "promotion":  "models/promotion/model.joblib",
+        "retention": "models/retention/model.joblib",
+        "safety":    "models/safety/model.joblib",
+        "promotion": "models/promotion/model.joblib",
     }
     for name, gcs_path in model_files.items():
         with tempfile.NamedTemporaryFile(suffix=".joblib", delete=False) as tmp:
@@ -62,12 +108,10 @@ def load_models():
     background = _build_background_data()
     for name, pipeline in models.items():
         try:
-            # Transform background data through the pipeline preprocessor
-            # then build a TreeExplainer on the raw classifier
-            preprocessor = pipeline.named_steps['preprocessor']
-            classifier   = pipeline.named_steps['classifier']
+            preprocessor     = pipeline.named_steps['preprocessor']
+            classifier       = pipeline.named_steps['classifier']
             X_bg_transformed = preprocessor.transform(background)
-            explainer = shap.TreeExplainer(classifier, data=X_bg_transformed)
+            explainer        = shap.TreeExplainer(classifier, data=X_bg_transformed)
             shap_explainers[name] = (explainer, preprocessor)
             print(f"  SHAP ready: {name}")
         except Exception as e:
@@ -76,7 +120,6 @@ def load_models():
 
 
 def _build_background_data() -> pd.DataFrame:
-    """Small representative background dataset for SHAP — 50 samples."""
     np.random.seed(360)
     n = 50
     soc_codes = np.random.choice(
@@ -147,7 +190,7 @@ def _build_background_data() -> pd.DataFrame:
     return df
 
 
-# ── Cohort percentile lookup ──────────────────────────────────────────────────
+# ── Cohort percentile ─────────────────────────────────────────────────────────
 SOC_SCORE_PARAMS = {
     '49-9051.00': {'mean': 64.2, 'std': 11.8},
     '49-2022.00': {'mean': 67.5, 'std': 11.2},
@@ -186,31 +229,19 @@ def _soc_label(soc_code: str) -> str:
 
 # ── SHAP factor extraction ────────────────────────────────────────────────────
 FEATURE_LABELS = {
-    "AttendanceRate":                 "Attendance Rate",
-    "SafetyCommitmentScore":          "Safety Commitment",
-    "Sorvex360PI_Score":              "PI Score",
-    "Sorvex360PI_ScoreAtHire":        "PI Score at Hire",
-    "TotalTrainingHours":             "Training Hours",
-    "CognitiveScore":                 "Cognitive Score",
-    "BehavioralScore":                "Behavioral Score",
-    "SituationalScore":               "Situational Score",
-    "SimulationScore":                "Simulation Score",
-    "LongestJobTenure":               "Job Tenure History",
-    "Age":                            "Age",
-    "HasPriorTradeExperience":        "Prior Trade Experience",
-    "CertificationsEarned":           "Certifications Earned",
-    "ReadinessDelta":                 "Readiness Change",
-    "UnionStatus":                    "Union Status",
-    "PassedRequiredModules":          "Passed Training Modules",
-    "ReliabilityScore":               "Reliability Score",
-    "TeamworkScore":                  "Teamwork Score",
-    "PhysicalTestResult":             "Physical Test",
-    "Orientation_LOTO_Completed":     "LOTO Orientation",
-    "Apprenticeship_Registered":      "Apprenticeship Registered",
-    "VeteranStatus":                  "Veteran Status",
-    "CDL_Status":                     "CDL License",
-    "SimulationPerformance":          "Simulation Performance",
-    "Completed":                      "Completed Training",
+    "AttendanceRate":"Attendance Rate","SafetyCommitmentScore":"Safety Commitment",
+    "Sorvex360PI_Score":"PI Score","Sorvex360PI_ScoreAtHire":"PI Score at Hire",
+    "TotalTrainingHours":"Training Hours","CognitiveScore":"Cognitive Score",
+    "BehavioralScore":"Behavioral Score","SituationalScore":"Situational Score",
+    "SimulationScore":"Simulation Score","LongestJobTenure":"Job Tenure History",
+    "Age":"Age","HasPriorTradeExperience":"Prior Trade Experience",
+    "CertificationsEarned":"Certifications Earned","ReadinessDelta":"Readiness Change",
+    "UnionStatus":"Union Status","PassedRequiredModules":"Passed Training Modules",
+    "ReliabilityScore":"Reliability Score","TeamworkScore":"Teamwork Score",
+    "PhysicalTestResult":"Physical Test","Orientation_LOTO_Completed":"LOTO Orientation",
+    "Apprenticeship_Registered":"Apprenticeship Registered","VeteranStatus":"Veteran Status",
+    "CDL_Status":"CDL License","SimulationPerformance":"Simulation Performance",
+    "Completed":"Completed Training",
 }
 
 def get_shap_factors(model_name: str, X: pd.DataFrame, n_factors: int = 3) -> list:
@@ -219,58 +250,37 @@ def get_shap_factors(model_name: str, X: pd.DataFrame, n_factors: int = 3) -> li
         return []
     try:
         explainer, preprocessor = entry
-
-        # Transform the candidate row through the preprocessor
         X_transformed = preprocessor.transform(X)
-
-        # Get SHAP values — TreeExplainer returns shape (n_samples, n_features)
-        # For binary classification it may return a list of two arrays; take index [1] (positive class)
         shap_values = explainer.shap_values(X_transformed)
         if isinstance(shap_values, list):
-            vals = shap_values[1][0]   # positive class, first (only) sample
+            vals = shap_values[1][0]
         else:
-            vals = shap_values[0]      # single output
-
-        # Map back to original feature names using the raw X columns
-        # We use the original feature names since transformed columns are anonymous
+            vals = shap_values[0]
         original_feature_names = list(X.columns)
-
-        # If transformed dimension differs from original (due to one-hot),
-        # fall back to numeric-only features which have 1:1 mapping
         numeric_features = [c for c in original_feature_names
                             if X[c].dtype in [np.float64, np.float32, np.int64, np.int32, int, float]]
-
-        # Get the numeric transformer output count to align SHAP values
         try:
             n_numeric = len(preprocessor.named_transformers_['num'].transform(
-                X[numeric_features]
-            ).T)
+                X[numeric_features]).T)
         except Exception:
             n_numeric = len(numeric_features)
-
-        # Use only the numeric SHAP values — these map cleanly to feature names
         vals_numeric = vals[:n_numeric]
         top_idx = np.argsort(np.abs(vals_numeric))[::-1][:n_factors]
-
         factors = []
         for idx in top_idx:
-            if idx >= len(numeric_features):
-                continue
-            name      = numeric_features[idx]
-            value     = float(vals_numeric[idx])
-            raw_val   = X.iloc[0][name]
-            label     = FEATURE_LABELS.get(name, name)
-            direction = "increases" if value > 0 else "decreases"
+            if idx >= len(numeric_features): continue
+            name  = numeric_features[idx]
+            value = float(vals_numeric[idx])
             factors.append({
                 "feature":    name,
-                "label":      label,
+                "label":      FEATURE_LABELS.get(name, name),
                 "shap_value": round(value, 4),
-                "direction":  direction,
-                "raw_value":  float(raw_val) if isinstance(raw_val, (np.integer, np.floating)) else raw_val,
+                "direction":  "increases" if value > 0 else "decreases",
+                "raw_value":  float(X.iloc[0][name]) if isinstance(X.iloc[0][name], (np.integer, np.floating)) else X.iloc[0][name],
             })
         return factors
     except Exception as e:
-        print(f"SHAP computation failed for {model_name}: {e}")
+        print(f"SHAP failed for {model_name}: {e}")
         return []
 
 
@@ -281,47 +291,47 @@ class CandidateProfile(BaseModel):
     Gender:                  str   = Field(..., example="Male")
     State:                   str   = Field(..., example="TX")
     EducationLevel:          str   = Field(..., example="Associate Technical")
-    CognitiveScore:          int   = Field(..., ge=50, le=100, example=72)
-    SimulationScore:         int   = Field(..., ge=50, le=100, example=70)
-    BehavioralScore:         int   = Field(..., ge=50, le=100, example=68)
-    SituationalScore:        int   = Field(..., ge=50, le=100, example=67)
-    Sorvex360PI_Score:       float = Field(..., example=66.5)
-    HasPriorTradeExperience: int   = Field(..., ge=0, le=1, example=1)
-    LongestJobTenure:        float = Field(..., example=4.5)
-    CDL_Status:              int   = Field(..., ge=0, le=1, example=0)
-    VeteranStatus:           int   = Field(..., ge=0, le=1, example=0)
-    ApprenticeshipInterest:  int   = Field(..., ge=0, le=1, example=1)
-    HasValidLicense:         int   = Field(..., ge=0, le=1, example=1)
-    CanPassDrugScreen:       int   = Field(..., ge=0, le=1, example=1)
-    CanPassBackgroundCheck:  int   = Field(..., ge=0, le=1, example=1)
-    MostRecentIndustry:      str   = Field(..., example="Construction")
-    TrainingSource:          str   = Field(..., example="IBEW JATC")
-    SourceOfCandidate:       str   = Field(..., example="WorkforceProgram")
-    TotalTrainingHours:             Optional[int]   = Field(default=6400)
-    AttendanceRate:                 Optional[float] = Field(default=0.80)
-    PassedRequiredModules:          Optional[int]   = Field(default=1)
-    CertificationsEarned:           Optional[int]   = Field(default=2)
-    SimulationPerformance:          Optional[int]   = Field(default=65)
-    SafetyCommitmentScore:          Optional[float] = Field(default=3.0)
-    TeamworkScore:                  Optional[float] = Field(default=3.2)
-    ReliabilityScore:               Optional[float] = Field(default=3.3)
-    PhysicalTestResult:             Optional[int]   = Field(default=1)
-    Lift50lbsTest:                  Optional[int]   = Field(default=1)
-    Completed:                      Optional[int]   = Field(default=1)
-    ReadinessDelta:                 Optional[float] = Field(default=5.0)
-    Sorvex360PI_Score_AtCompletion: Optional[float] = Field(default=None)
-    UnionStatus:                    Optional[int]   = Field(default=0)
-    EmploymentType:                 Optional[str]   = Field(default="Full-Time")
-    RoleRequires_CDL:               Optional[int]   = Field(default=0)
-    RoleRequires_OSHA10:            Optional[int]   = Field(default=0)
-    RoleRequires_CPR:               Optional[int]   = Field(default=0)
-    PreHire_Verified_MVR:           Optional[int]   = Field(default=1)
-    PreHire_Verified_DrugScreen:    Optional[int]   = Field(default=1)
-    PreHire_Verified_Background:    Optional[int]   = Field(default=1)
-    Orientation_LOTO_Completed:     Optional[int]   = Field(default=1)
-    Orientation_PPE_Fitted:         Optional[int]   = Field(default=1)
-    Apprenticeship_Registered:      Optional[int]   = Field(default=0)
-    Sorvex360PI_ScoreAtHire:        Optional[float] = Field(default=None)
+    CognitiveScore:          int   = Field(..., ge=50, le=100)
+    SimulationScore:         int   = Field(..., ge=50, le=100)
+    BehavioralScore:         int   = Field(..., ge=50, le=100)
+    SituationalScore:        int   = Field(..., ge=50, le=100)
+    Sorvex360PI_Score:       float
+    HasPriorTradeExperience: int   = Field(..., ge=0, le=1)
+    LongestJobTenure:        float
+    CDL_Status:              int   = Field(..., ge=0, le=1)
+    VeteranStatus:           int   = Field(..., ge=0, le=1)
+    ApprenticeshipInterest:  int   = Field(..., ge=0, le=1)
+    HasValidLicense:         int   = Field(..., ge=0, le=1)
+    CanPassDrugScreen:       int   = Field(..., ge=0, le=1)
+    CanPassBackgroundCheck:  int   = Field(..., ge=0, le=1)
+    MostRecentIndustry:      str
+    TrainingSource:          str
+    SourceOfCandidate:       str
+    TotalTrainingHours:             Optional[int]   = 6400
+    AttendanceRate:                 Optional[float] = 0.80
+    PassedRequiredModules:          Optional[int]   = 1
+    CertificationsEarned:           Optional[int]   = 2
+    SimulationPerformance:          Optional[int]   = 65
+    SafetyCommitmentScore:          Optional[float] = 3.0
+    TeamworkScore:                  Optional[float] = 3.2
+    ReliabilityScore:               Optional[float] = 3.3
+    PhysicalTestResult:             Optional[int]   = 1
+    Lift50lbsTest:                  Optional[int]   = 1
+    Completed:                      Optional[int]   = 1
+    ReadinessDelta:                 Optional[float] = 5.0
+    Sorvex360PI_Score_AtCompletion: Optional[float] = None
+    UnionStatus:                    Optional[int]   = 0
+    EmploymentType:                 Optional[str]   = "Full-Time"
+    RoleRequires_CDL:               Optional[int]   = 0
+    RoleRequires_OSHA10:            Optional[int]   = 0
+    RoleRequires_CPR:               Optional[int]   = 0
+    PreHire_Verified_MVR:           Optional[int]   = 1
+    PreHire_Verified_DrugScreen:    Optional[int]   = 1
+    PreHire_Verified_Background:    Optional[int]   = 1
+    Orientation_LOTO_Completed:     Optional[int]   = 1
+    Orientation_PPE_Fitted:         Optional[int]   = 1
+    Apprenticeship_Registered:      Optional[int]   = 0
+    Sorvex360PI_ScoreAtHire:        Optional[float] = None
 
 class ExplainRequest(BaseModel):
     candidate:    CandidateProfile
@@ -334,7 +344,7 @@ class CompareRequest(BaseModel):
     candidate_b: CandidateProfile
 
 
-# ── Risk tier logic ───────────────────────────────────────────────────────────
+# ── Risk tier/score logic ─────────────────────────────────────────────────────
 def get_risk_tier(probability: float, outcome: str) -> str:
     if outcome == "retention":
         if probability >= 0.75: return "Low"
@@ -350,9 +360,9 @@ def get_risk_tier(probability: float, outcome: str) -> str:
         return "High"
 
 def get_risk_score(probability: float, outcome: str) -> int:
-    if outcome == "retention":  return int(probability * 100)
-    elif outcome == "safety":   return int((1 - probability) * 100)
-    else:                       return int(probability * 100)
+    if outcome == "retention": return int(probability * 100)
+    elif outcome == "safety":  return int((1 - probability) * 100)
+    else:                      return int(probability * 100)
 
 
 # ── Build feature DataFrame ───────────────────────────────────────────────────
@@ -360,63 +370,43 @@ def build_features(candidate: CandidateProfile) -> pd.DataFrame:
     pi_at_completion = candidate.Sorvex360PI_Score_AtCompletion or candidate.Sorvex360PI_Score
     pi_at_hire       = candidate.Sorvex360PI_ScoreAtHire or pi_at_completion
     return pd.DataFrame([{
-        "Age":                            candidate.Age,
-        "CognitiveScore":                 candidate.CognitiveScore,
-        "SimulationScore":                candidate.SimulationScore,
-        "BehavioralScore":                candidate.BehavioralScore,
-        "SituationalScore":               candidate.SituationalScore,
-        "Sorvex360PI_Score":              candidate.Sorvex360PI_Score,
-        "HasPriorTradeExperience":        candidate.HasPriorTradeExperience,
-        "LongestJobTenure":               candidate.LongestJobTenure,
-        "CDL_Status":                     candidate.CDL_Status,
-        "VeteranStatus":                  candidate.VeteranStatus,
-        "ApprenticeshipInterest":         candidate.ApprenticeshipInterest,
-        "CanPassDrugScreen":              candidate.CanPassDrugScreen,
-        "CanPassBackgroundCheck":         candidate.CanPassBackgroundCheck,
-        "OSHA10_Status":                  0,
-        "CPR_Status":                     0,
-        "TotalTrainingHours":             candidate.TotalTrainingHours,
-        "AttendanceRate":                 candidate.AttendanceRate,
-        "PassedRequiredModules":          candidate.PassedRequiredModules,
-        "CertificationsEarned":           candidate.CertificationsEarned,
-        "SimulationPerformance":          candidate.SimulationPerformance,
-        "SafetyCommitmentScore":          candidate.SafetyCommitmentScore,
-        "TeamworkScore":                  candidate.TeamworkScore,
-        "ReliabilityScore":               candidate.ReliabilityScore,
-        "PhysicalTestResult":             candidate.PhysicalTestResult,
-        "Lift50lbsTest":                  candidate.Lift50lbsTest,
-        "Completed":                      candidate.Completed,
-        "ReadinessDelta":                 candidate.ReadinessDelta,
-        "Sorvex360PI_Score_AtCompletion": pi_at_completion,
-        "UnionStatus":                    candidate.UnionStatus,
-        "RoleRequires_CDL":               candidate.RoleRequires_CDL,
-        "RoleRequires_OSHA10":            candidate.RoleRequires_OSHA10,
-        "RoleRequires_CPR":               candidate.RoleRequires_CPR,
-        "PreHire_Verified_MVR":           candidate.PreHire_Verified_MVR,
-        "PreHire_Verified_DrugScreen":    candidate.PreHire_Verified_DrugScreen,
-        "PreHire_Verified_Background":    candidate.PreHire_Verified_Background,
-        "Orientation_LOTO_Completed":     candidate.Orientation_LOTO_Completed,
-        "Orientation_PPE_Fitted":         candidate.Orientation_PPE_Fitted,
-        "Apprenticeship_Registered":      candidate.Apprenticeship_Registered,
-        "Sorvex360PI_ScoreAtHire":        pi_at_hire,
-        "SOC_Code":                       candidate.SOC_Code,
-        "Gender":                         candidate.Gender,
-        "EducationLevel":                 candidate.EducationLevel,
-        "MostRecentIndustry":             candidate.MostRecentIndustry,
-        "TrainingSource":                 candidate.TrainingSource,
-        "SourceOfCandidate":              candidate.SourceOfCandidate,
-        "EmploymentType":                 candidate.EmploymentType,
-        "HasValidLicense":                str(candidate.HasValidLicense),
+        "Age": candidate.Age, "CognitiveScore": candidate.CognitiveScore,
+        "SimulationScore": candidate.SimulationScore, "BehavioralScore": candidate.BehavioralScore,
+        "SituationalScore": candidate.SituationalScore, "Sorvex360PI_Score": candidate.Sorvex360PI_Score,
+        "HasPriorTradeExperience": candidate.HasPriorTradeExperience,
+        "LongestJobTenure": candidate.LongestJobTenure, "CDL_Status": candidate.CDL_Status,
+        "VeteranStatus": candidate.VeteranStatus, "ApprenticeshipInterest": candidate.ApprenticeshipInterest,
+        "CanPassDrugScreen": candidate.CanPassDrugScreen, "CanPassBackgroundCheck": candidate.CanPassBackgroundCheck,
+        "OSHA10_Status": 0, "CPR_Status": 0,
+        "TotalTrainingHours": candidate.TotalTrainingHours, "AttendanceRate": candidate.AttendanceRate,
+        "PassedRequiredModules": candidate.PassedRequiredModules, "CertificationsEarned": candidate.CertificationsEarned,
+        "SimulationPerformance": candidate.SimulationPerformance, "SafetyCommitmentScore": candidate.SafetyCommitmentScore,
+        "TeamworkScore": candidate.TeamworkScore, "ReliabilityScore": candidate.ReliabilityScore,
+        "PhysicalTestResult": candidate.PhysicalTestResult, "Lift50lbsTest": candidate.Lift50lbsTest,
+        "Completed": candidate.Completed, "ReadinessDelta": candidate.ReadinessDelta,
+        "Sorvex360PI_Score_AtCompletion": pi_at_completion, "UnionStatus": candidate.UnionStatus,
+        "RoleRequires_CDL": candidate.RoleRequires_CDL, "RoleRequires_OSHA10": candidate.RoleRequires_OSHA10,
+        "RoleRequires_CPR": candidate.RoleRequires_CPR, "PreHire_Verified_MVR": candidate.PreHire_Verified_MVR,
+        "PreHire_Verified_DrugScreen": candidate.PreHire_Verified_DrugScreen,
+        "PreHire_Verified_Background": candidate.PreHire_Verified_Background,
+        "Orientation_LOTO_Completed": candidate.Orientation_LOTO_Completed,
+        "Orientation_PPE_Fitted": candidate.Orientation_PPE_Fitted,
+        "Apprenticeship_Registered": candidate.Apprenticeship_Registered,
+        "Sorvex360PI_ScoreAtHire": pi_at_hire,
+        "SOC_Code": candidate.SOC_Code, "Gender": candidate.Gender,
+        "EducationLevel": candidate.EducationLevel, "MostRecentIndustry": candidate.MostRecentIndustry,
+        "TrainingSource": candidate.TrainingSource, "SourceOfCandidate": candidate.SourceOfCandidate,
+        "EmploymentType": candidate.EmploymentType, "HasValidLicense": str(candidate.HasValidLicense),
     }])
 
 
-# ── Run predictions for one candidate ────────────────────────────────────────
+# ── Run predictions ───────────────────────────────────────────────────────────
 def run_predictions(candidate: CandidateProfile) -> dict:
     X = build_features(candidate)
     model_map = {
-        "retention":  ("Tenure_1Year",            "Will candidate stay 1+ year?"),
-        "safety":     ("OSHA_Recordable_Incident", "OSHA incident likelihood"),
-        "promotion":  ("PromotionWithin24Months",  "Promotion within 24 months"),
+        "retention": ("Tenure_1Year",            "Will candidate stay 1+ year?"),
+        "safety":    ("OSHA_Recordable_Incident", "OSHA incident likelihood"),
+        "promotion": ("PromotionWithin24Months",  "Promotion within 24 months"),
     }
     predictions = {}
     for model_name, (outcome_label, description) in model_map.items():
@@ -450,7 +440,7 @@ def run_predictions(candidate: CandidateProfile) -> dict:
         },
         "predictions":   predictions,
         "cohort":        cohort,
-        "model_version": "v2.0",
+        "model_version": "v3.0",
     }
 
 
@@ -477,34 +467,122 @@ def _shap_summary_text(shap_factors: dict) -> str:
     lines = []
     for model_name, factors in shap_factors.items():
         if not factors: continue
-        label = {"retention": "Retention", "safety": "Safety", "promotion": "Promotion"}[model_name]
+        label = {"retention":"Retention","safety":"Safety","promotion":"Promotion"}[model_name]
         factor_text = ", ".join([
-            f"{f['label']} ({'+' if f['direction'] == 'increases' else '-'})"
+            f"{f['label']} ({'+' if f['direction']=='increases' else '-'})"
             for f in factors
         ])
         lines.append(f"{label}: {factor_text}")
     return " | ".join(lines)
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# PAGE ROUTES (protected)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    if request.session.get("user"):
+        return RedirectResponse(url="/dashboard", status_code=302)
+    return RedirectResponse(url="/login", status_code=302)
+
+# ── Login ──────────────────────────────────────────────────────────────────────
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    if request.session.get("user"):
+        return RedirectResponse(url="/dashboard", status_code=302)
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.post("/login", response_class=HTMLResponse)
+async def login_submit(request: Request, username: str = Form(...), password: str = Form(...)):
+    user = USERS.get(username)
+    if not user or user["password"] != password:
+        return templates.TemplateResponse("login.html", {
+            "request":  request,
+            "error":    "Invalid username or password.",
+            "username": username,
+        })
+    request.session["user"] = {
+        "username": username,
+        "role":     user["role"],
+        "client":   user["client"],
+    }
+    return RedirectResponse(url="/dashboard", status_code=302)
+
+# ── Logout ────────────────────────────────────────────────────────────────────
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=302)
+
+# ── Dashboard ─────────────────────────────────────────────────────────────────
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    redir = require_auth(request)
+    if redir: return redir
+    return render_page(request, "dashboard.html", "dashboard")
+
+# ── Candidate Intelligence ────────────────────────────────────────────────────
+@app.get("/candidates", response_class=HTMLResponse)
+async def candidates(request: Request):
+    redir = require_auth(request)
+    if redir: return redir
+    return render_page(request, "candidates.html", "candidates")
+
+# ── Placement Readiness ───────────────────────────────────────────────────────
+@app.get("/placement", response_class=HTMLResponse)
+async def placement(request: Request):
+    redir = require_auth(request)
+    if redir: return redir
+    return render_page(request, "placement.html", "placement")
+
+# ── Batch Upload ──────────────────────────────────────────────────────────────
+@app.get("/upload", response_class=HTMLResponse)
+async def upload(request: Request):
+    redir = require_auth(request)
+    if redir: return redir
+    return render_page(request, "upload.html", "upload")
+
+# ── Hotspot Module ────────────────────────────────────────────────────────────
+@app.get("/hotspot", response_class=HTMLResponse)
+async def hotspot(request: Request):
+    redir = require_auth(request)
+    if redir: return redir
+    return render_page(request, "hotspot.html", "hotspot")
+
+# ── Single Screener ───────────────────────────────────────────────────────────
+@app.get("/screener", response_class=HTMLResponse)
+async def screener(request: Request):
+    redir = require_auth(request)
+    if redir: return redir
+    return render_page(request, "screener.html", "screener")
+
+# ── About ─────────────────────────────────────────────────────────────────────
+@app.get("/about", response_class=HTMLResponse)
+async def about(request: Request):
+    redir = require_auth(request)
+    if redir: return redir
+    return render_page(request, "about.html", "about")
+
+# ── Admin (admin only) ────────────────────────────────────────────────────────
+@app.get("/admin", response_class=HTMLResponse)
+async def admin(request: Request):
+    redir = require_admin(request)
+    if redir: return redir
+    return render_page(request, "admin.html", "admin")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# API ENDPOINTS (unchanged from v2.1)
+# ═══════════════════════════════════════════════════════════════════════════════
+
 @app.get("/health")
 def health():
     return {
         "status":        "ok",
         "models_loaded": list(models.keys()),
         "shap_ready":    [k for k, v in shap_explainers.items() if v is not None],
-        "version":       "2.0.0"
-    }
-
-@app.get("/")
-def root():
-    return {
-        "service": "Sorvex 360 Prediction API",
-        "docs":    "/docs",
-        "health":  "/health",
-        "predict": "/predict",
-        "explain": "/explain",
-        "compare": "/compare",
+        "version":       "3.0.0"
     }
 
 @app.post("/predict")
