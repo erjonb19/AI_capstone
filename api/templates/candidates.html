@@ -766,8 +766,46 @@ function togglePlan(btn) {
   btn.querySelector('span:last-child').textContent = isOpen ? '▼' : '▲';
 }
 
-function exportPDF() {
-  alert('PDF export — connect to /pdf endpoint in main.py. Coming in next build.');
+async function exportPDF() {
+  if (selectedIdx === null || !allCandidates[selectedIdx]) {
+    alert('Please select a candidate first.'); return;
+  }
+  const c = allCandidates[selectedIdx];
+  const memberNum = 'M' + String(selectedIdx + 1).padStart(4, '0');
+  const aiText = document.getElementById('aiContent')?.querySelector('.ai-text')?.textContent || '';
+  const planText = document.getElementById('planContent')?.textContent || '';
+  const btn = document.querySelector('.pdf-btn');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Generating PDF...';
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/pdf/hiring-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        candidate: c.payload,
+        summary: c.data.candidate_summary,
+        predictions: c.data.predictions,
+        cohort: c.data.cohort,
+        ai_summary: aiText,
+        onboarding_plan: planText,
+        member_num: memberNum,
+      })
+    });
+    if (!res.ok) throw new Error('PDF generation failed');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'SorvexHiringPlan_' + memberNum + '.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert('PDF export failed: ' + e.message);
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
 }
 
 // Initial render — load from server then render
