@@ -577,10 +577,13 @@
   <div class="topbar">
     <div class="topbar-title">{% block topbar_title %}Sorvex 360{% endblock %}</div>
     <div class="topbar-right">
-      <div class="live-badge">
-        <div class="live-dot"></div>
-        API Live · v2.1
-      </div>
+      {% if session.role == 'admin' %}
+      <select id="clientSwitcher" onchange="switchClient(this.value)" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:6px 12px;color:var(--slate-light);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer;">
+        <option value="all">All Clients</option>
+        <option value="clienta">Utility Corp A</option>
+        <option value="clientb">Utility Corp B</option>
+      </select>
+      {% endif %}
     </div>
   </div>
 
@@ -603,5 +606,20 @@
 </div>
 
 {% block extra_scripts %}{% endblock %}
+<script>
+function switchClient(clientKey) {
+  // Store selected client and reload page so all pages respect the filter
+  sessionStorage.setItem('sorvex_selected_client', clientKey);
+  window.dispatchEvent(new CustomEvent('clientSwitch', { detail: clientKey }));
+}
+// Restore switcher state on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const switcher = document.getElementById('clientSwitcher');
+  if (switcher) {
+    const saved = sessionStorage.getItem('sorvex_selected_client') || 'all';
+    switcher.value = saved;
+  }
+});
+</script>
 </body>
 </html>
