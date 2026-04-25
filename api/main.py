@@ -73,14 +73,16 @@ def require_admin(request: Request) -> Optional[RedirectResponse]:
     return None
 
 def render_page(request: Request, template: str, active_page: str, **kwargs):
-    """Helper to render a protected page with common context."""
-    return templates.TemplateResponse(template, {
-        "request":      request,
-        "session":      get_session(request),
-        "active_page":  active_page,
-        "api_base":     API_BASE,
-        **kwargs
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name=template,
+        context={
+            "session":     get_session(request),
+            "active_page": active_page,
+            "api_base":    API_BASE,
+            **kwargs
+        }
+    )
 
 # ── Model + SHAP cache ────────────────────────────────────────────────────────
 models          = {}
@@ -491,17 +493,20 @@ async def root(request: Request):
 async def login_page(request: Request):
     if request.session.get("user"):
         return RedirectResponse(url="/dashboard", status_code=302)
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html"
+    )
 
 @app.post("/login", response_class=HTMLResponse)
 async def login_submit(request: Request, username: str = Form(...), password: str = Form(...)):
     user = USERS.get(username)
     if not user or user["password"] != password:
-        return templates.TemplateResponse("login.html", {
-            "request":  request,
-            "error":    "Invalid username or password.",
-            "username": username,
-        })
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={"error": "Invalid username or password.", "username": username}
+        )
     request.session["user"] = {
         "username": username,
         "role":     user["role"],
