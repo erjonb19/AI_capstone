@@ -395,10 +395,15 @@ const ROLE_TTA_BASE = {
 
 let allCandidates = [];
 
-try {
-  const stored = sessionStorage.getItem('sorvex_batch_results');
-  if (stored) allCandidates = JSON.parse(stored);
-} catch(e) {}
+// Load from server-side batch store
+async function loadFromServer() {
+  const client = sessionStorage.getItem('sorvex_selected_client') || 'all';
+  try {
+    const res = await fetch('/api/load-batch?client=' + client);
+    const data = await res.json();
+    allCandidates = data.results || [];
+  } catch(e) { allCandidates = []; }
+}
 
 function calcTTA(c) {
   const s = c.data.candidate_summary;
@@ -646,7 +651,14 @@ function exportCSV() {
   URL.revokeObjectURL(url);
 }
 
-// Initial render
-applyFilters();
+// Initial render — load from server then render
+(async () => {
+  await loadFromServer();
+  applyFilters();
+  window.addEventListener('clientSwitch', async (e) => {
+    await loadFromServer();
+    applyFilters();
+  });
+})();
 </script>
 {% endblock %}
