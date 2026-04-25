@@ -4,20 +4,37 @@
 {% block topbar_title %}Hotspot Scenario Module — Situational Assessment{% endblock %}
 
 {% block extra_styles %}
-/* Scenario layout */
 .hotspot-layout {
   display: grid;
-  grid-template-columns: 1fr 360px;
+  grid-template-columns: 1fr 340px;
   gap: 24px;
   align-items: start;
 }
 
-/* Scenario card */
+.phase-tabs {
+  display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
+}
+
+.phase-tab {
+  padding: 8px 18px; border-radius: 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--slate);
+}
+
+.phase-tab.active {
+  background: rgba(37,99,235,0.15);
+  border-color: var(--blue-light);
+  color: var(--blue-light);
+}
+
 .scenario-card {
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  overflow: hidden;
+  border-radius: 16px; overflow: hidden;
 }
 
 .scenario-header {
@@ -28,42 +45,32 @@
 
 .scenario-number {
   font-family: 'DM Serif Display', serif;
-  font-size: 32px; color: var(--blue-light); line-height: 1;
-  flex-shrink: 0;
+  font-size: 32px; color: var(--blue-light); line-height: 1; flex-shrink: 0;
 }
-
-.scenario-meta { flex: 1; }
 
 .scenario-category {
   font-family: 'DM Mono', monospace;
-  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
-  margin-bottom: 4px;
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;
 }
 
-.scenario-title {
-  font-size: 16px; font-weight: 600; color: var(--white);
-}
+.scenario-title { font-size: 16px; font-weight: 600; color: var(--white); }
 
 .scenario-difficulty {
-  margin-left: auto;
-  padding: 4px 12px; border-radius: 20px;
-  font-family: 'DM Mono', monospace;
-  font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
-  flex-shrink: 0;
+  margin-left: auto; padding: 4px 12px; border-radius: 20px;
+  font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.5px; flex-shrink: 0;
 }
 
 .diff-low    { background: rgba(5,150,105,0.12); color: #34D399; border: 1px solid rgba(5,150,105,0.2); }
 .diff-medium { background: rgba(217,119,6,0.12); color: #FCD34D; border: 1px solid rgba(217,119,6,0.2); }
 .diff-high   { background: rgba(220,38,38,0.12); color: #F87171; border: 1px solid rgba(220,38,38,0.2); }
 
-/* Scenario body */
 .scenario-body { padding: 24px; }
 
 .scenario-context {
   background: rgba(37,99,235,0.06);
   border: 1px solid rgba(37,99,235,0.15);
-  border-radius: 12px; padding: 16px;
-  margin-bottom: 20px;
+  border-radius: 12px; padding: 16px; margin-bottom: 20px;
 }
 
 .context-label {
@@ -72,25 +79,13 @@
   color: var(--blue-light); margin-bottom: 8px;
 }
 
-.context-text {
-  font-size: 14px; color: var(--slate-light);
-  line-height: 1.7;
-}
+.context-text { font-size: 14px; color: var(--slate-light); line-height: 1.7; }
+.scenario-question { font-size: 15px; font-weight: 600; color: var(--white); line-height: 1.5; margin-bottom: 20px; }
 
-.scenario-question {
-  font-size: 15px; font-weight: 600; color: var(--white);
-  line-height: 1.5; margin-bottom: 20px;
-}
-
-/* Answer options */
-.options-list {
-  display: flex; flex-direction: column; gap: 10px;
-  margin-bottom: 24px;
-}
+.options-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
 
 .option-btn {
-  width: 100%; text-align: left;
-  padding: 14px 18px;
+  width: 100%; text-align: left; padding: 14px 18px;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px; color: var(--slate-light);
@@ -99,239 +94,242 @@
   display: flex; align-items: flex-start; gap: 12px;
 }
 
-.option-btn:hover:not(:disabled) {
-  background: rgba(37,99,235,0.08);
-  border-color: rgba(37,99,235,0.25);
-  color: var(--white);
-}
-
-.option-btn.selected {
-  background: rgba(37,99,235,0.12);
-  border-color: var(--blue-light);
-  color: var(--white);
-}
-
-.option-btn.correct {
-  background: rgba(5,150,105,0.12);
-  border-color: #059669;
-  color: #34D399;
-}
-
-.option-btn.incorrect {
-  background: rgba(220,38,38,0.08);
-  border-color: #DC2626;
-  color: #F87171;
-}
-
+.option-btn:hover:not(:disabled) { background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.25); color: var(--white); }
+.option-btn.correct  { background: rgba(5,150,105,0.12); border-color: #059669; color: #34D399; }
+.option-btn.incorrect { background: rgba(220,38,38,0.08); border-color: #DC2626; color: #F87171; }
 .option-btn:disabled { cursor: default; }
 
 .option-letter {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px; font-weight: 600;
-  width: 22px; height: 22px;
-  border-radius: 6px;
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600;
+  width: 22px; height: 22px; border-radius: 6px;
   background: rgba(255,255,255,0.08);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; margin-top: 1px;
 }
 
-.option-btn.correct .option-letter { background: rgba(5,150,105,0.25); }
+.option-btn.correct .option-letter  { background: rgba(5,150,105,0.25); }
 .option-btn.incorrect .option-letter { background: rgba(220,38,38,0.2); }
-.option-btn.selected .option-letter { background: rgba(37,99,235,0.25); }
 
-/* Feedback */
 .feedback-card {
-  display: none;
-  padding: 16px; border-radius: 12px;
-  margin-bottom: 20px;
-  animation: fadeIn 0.3s ease;
+  display: none; padding: 16px; border-radius: 12px;
+  margin-bottom: 20px; animation: fadeIn 0.3s ease;
 }
 
-.feedback-card.correct-fb {
-  background: rgba(5,150,105,0.08);
-  border: 1px solid rgba(5,150,105,0.2);
+.feedback-card.correct-fb  { background: rgba(5,150,105,0.08);  border: 1px solid rgba(5,150,105,0.2); }
+.feedback-card.incorrect-fb { background: rgba(220,38,38,0.06); border: 1px solid rgba(220,38,38,0.15); }
+.feedback-title { font-weight: 700; margin-bottom: 6px; }
+.feedback-text  { font-size: 13px; line-height: 1.6; color: var(--slate-light); }
+
+.short-answer-section {
+  background: rgba(124,58,237,0.06);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 12px; padding: 20px; margin-bottom: 20px;
 }
 
-.feedback-card.incorrect-fb {
-  background: rgba(220,38,38,0.06);
-  border: 1px solid rgba(220,38,38,0.15);
+.sa-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: #A78BFA; margin-bottom: 10px;
 }
 
-.feedback-title {
-  font-weight: 700; margin-bottom: 6px;
-  display: flex; align-items: center; gap: 8px;
+.sa-question {
+  font-size: 14px; font-weight: 600; color: var(--white);
+  line-height: 1.5; margin-bottom: 14px;
 }
 
-.feedback-text {
-  font-size: 13px; line-height: 1.6;
-}
-
-/* Nav buttons */
-.scenario-nav {
-  display: flex; gap: 12px; align-items: center;
-}
-
-/* Progress sidebar */
-.progress-sidebar {
-  display: flex; flex-direction: column; gap: 16px;
-  position: sticky; top: 24px;
-}
-
-.progress-card-sm {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px; padding: 20px;
-}
-
-.candidate-input-section {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px; padding: 20px;
-}
-
-.candidate-input {
+.sa-textarea {
   width: 100%;
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px; padding: 10px 14px;
-  color: var(--white);
-  font-family: 'Outfit', sans-serif; font-size: 14px;
+  border-radius: 10px; padding: 12px 14px;
+  color: var(--white); font-family: 'Outfit', sans-serif; font-size: 14px;
+  line-height: 1.6; resize: vertical; min-height: 100px;
   outline: none; transition: all 0.2s;
-  margin-bottom: 12px;
 }
 
-.candidate-input:focus {
-  border-color: var(--blue);
-  background: rgba(37,99,235,0.08);
+.sa-textarea:focus { border-color: #7C3AED; background: rgba(124,58,237,0.06); }
+.sa-textarea:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.sa-submit-btn {
+  margin-top: 12px; padding: 10px 20px;
+  background: rgba(124,58,237,0.15);
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 10px; color: #A78BFA;
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
 }
 
-.candidate-input option { background: #0F2035; }
+.sa-submit-btn:hover:not(:disabled) { background: rgba(124,58,237,0.25); }
+.sa-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Score summary */
-.score-summary {
-  display: none;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px; padding: 24px;
-  text-align: center;
+.gemini-assessment {
+  display: none; margin-top: 16px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px; padding: 16px;
   animation: fadeIn 0.4s ease;
 }
 
-.summary-score {
+.gemini-assessment.visible { display: block; }
+
+.gemini-scores {
+  display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 14px;
+}
+
+.gemini-score-item { text-align: center; }
+
+.gemini-score-val {
   font-family: 'DM Serif Display', serif;
-  font-size: 64px; line-height: 1; margin-bottom: 8px;
+  font-size: 24px; line-height: 1; margin-bottom: 2px;
 }
 
-.summary-label {
+.gemini-score-label {
   font-family: 'DM Mono', monospace;
-  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-  color: var(--slate); margin-bottom: 16px;
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--slate);
 }
 
-.summary-breakdown {
-  display: flex; flex-direction: column; gap: 8px;
-  margin-bottom: 20px;
+.gemini-feedback {
+  font-size: 13px; color: var(--slate-light); line-height: 1.6; margin-bottom: 10px;
+  padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);
 }
 
-.breakdown-row {
-  display: flex; justify-content: space-between;
-  font-size: 13px; padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+.gemini-rec {
+  font-size: 12px; color: #A78BFA;
+  font-style: italic; padding: 8px 12px;
+  background: rgba(124,58,237,0.08); border-radius: 8px;
 }
 
-/* Scenario selector dots */
-.scenario-dots {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px;
+.gemini-loading {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px; color: var(--slate);
+  font-family: 'DM Mono', monospace; font-size: 11px;
 }
+
+.gemini-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(124,58,237,0.3);
+  border-top-color: #A78BFA;
+  border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;
+}
+
+.scenario-nav { display: flex; gap: 12px; align-items: center; }
+
+.progress-sidebar { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 24px; }
+.progress-card-sm { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; }
+
+.candidate-input {
+  width: 100%;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; padding: 10px 14px; color: var(--white);
+  font-family: 'Outfit', sans-serif; font-size: 14px;
+  outline: none; transition: all 0.2s; margin-bottom: 12px;
+}
+
+.candidate-input:focus { border-color: var(--blue); background: rgba(37,99,235,0.08); }
+.candidate-input option { background: #0F2035; }
+
+.scenario-dots { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 
 .scenario-dot {
-  width: 28px; height: 28px; border-radius: 8px;
+  width: 26px; height: 26px; border-radius: 7px;
   display: flex; align-items: center; justify-content: center;
-  font-family: 'DM Mono', monospace; font-size: 10px;
+  font-family: 'DM Mono', monospace; font-size: 9px;
   cursor: pointer; transition: all 0.2s;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: var(--slate);
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: var(--slate);
 }
 
 .scenario-dot:hover { background: rgba(37,99,235,0.1); border-color: var(--blue-light); color: var(--blue-light); }
 .scenario-dot.current { background: rgba(37,99,235,0.2); border-color: var(--blue-light); color: var(--blue-light); }
 .scenario-dot.answered-correct { background: rgba(5,150,105,0.15); border-color: #059669; color: #34D399; }
 .scenario-dot.answered-wrong   { background: rgba(220,38,38,0.12); border-color: #DC2626; color: #F87171; }
+.scenario-dot.answered-sa      { background: rgba(124,58,237,0.15); border-color: #7C3AED; color: #A78BFA; }
+
+.score-summary {
+  display: none; background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+  padding: 28px; text-align: center; animation: fadeIn 0.4s ease;
+}
+
+.summary-score { font-family: 'DM Serif Display', serif; font-size: 64px; line-height: 1; margin-bottom: 8px; }
+.summary-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--slate); margin-bottom: 20px; }
 {% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div class="page-eyebrow">Situational Assessment</div>
   <h1 class="page-title">Hotspot Scenario Module</h1>
-  <p class="page-subtitle">Present candidates with real-world utility field scenarios and capture their situational judgment responses.</p>
+  <p class="page-subtitle">15 multiple choice scenarios across 5 categories, plus 5 Gemini-scored short answer questions — 20 questions total.</p>
+</div>
+
+<div class="phase-tabs">
+  <div class="phase-tab active" id="tab-mc" onclick="switchPhase('mc')">📋 Multiple Choice (15)</div>
+  <div class="phase-tab" id="tab-sa" onclick="switchPhase('sa')">✍️ Short Answer (5)</div>
 </div>
 
 <div class="hotspot-layout">
-
-  <!-- Main scenario panel -->
   <div>
-    <!-- Scenario card -->
     <div class="scenario-card" id="scenarioCard">
       <div class="scenario-header">
         <div class="scenario-number" id="scenarioNumber">01</div>
-        <div class="scenario-meta">
+        <div>
           <div class="scenario-category" id="scenarioCategory" style="color:var(--teal);">Safety</div>
-          <div class="scenario-title" id="scenarioTitle">Loading scenario...</div>
+          <div class="scenario-title" id="scenarioTitle">Loading...</div>
         </div>
         <div class="scenario-difficulty diff-medium" id="scenarioDifficulty">Medium</div>
       </div>
-
       <div class="scenario-body">
         <div class="scenario-context">
           <div class="context-label">Situation</div>
           <div class="context-text" id="scenarioContext">—</div>
         </div>
-
         <div class="scenario-question" id="scenarioQuestion">—</div>
-
         <div class="options-list" id="optionsList"></div>
-
         <div class="feedback-card" id="feedbackCard">
           <div class="feedback-title" id="feedbackTitle"></div>
           <div class="feedback-text" id="feedbackText"></div>
         </div>
 
+        <div class="short-answer-section" id="saSection" style="display:none;">
+          <div class="sa-label">✦ Gemini-Scored Short Answer</div>
+          <div class="sa-question" id="saQuestion">—</div>
+          <textarea class="sa-textarea" id="saTextarea" placeholder="Write your response here (2-4 sentences recommended)..." rows="4"></textarea>
+          <button class="sa-submit-btn" id="saSubmitBtn" onclick="submitShortAnswer()">Submit for AI Assessment</button>
+          <div class="gemini-loading" id="geminiLoading" style="display:none;">
+            <div class="gemini-spinner"></div>
+            Gemini is evaluating your response...
+          </div>
+          <div class="gemini-assessment" id="geminiAssessment"></div>
+        </div>
+
         <div class="scenario-nav">
-          <button class="btn-secondary" onclick="prevScenario()" id="prevBtn">← Previous</button>
-          <button class="btn-primary" onclick="nextScenario()" id="nextBtn" style="display:none;">Next Scenario →</button>
-          <button class="btn-primary" onclick="finishAssessment()" id="finishBtn" style="display:none;">Finish Assessment ✓</button>
+          <button class="btn-secondary" onclick="prevScenario()" id="prevBtn" style="display:none;">← Previous</button>
+          <button class="btn-primary" onclick="nextScenario()" id="nextBtn" style="display:none;">Next →</button>
+          <button class="btn-primary" onclick="finishAssessment()" id="finishBtn" style="display:none;">Finish ✓</button>
           <div style="margin-left:auto;font-family:'DM Mono',monospace;font-size:11px;color:var(--slate);" id="navHint">Select an answer to continue</div>
         </div>
       </div>
     </div>
 
-    <!-- Score summary (shown after completion) -->
     <div class="score-summary" id="scoreSummary">
       <div class="card-title" style="text-align:left;margin-bottom:20px;">Assessment Complete</div>
       <div class="summary-score" id="summaryScore" style="color:var(--blue-light);">—</div>
-      <div class="summary-label">Hotspot Score</div>
-      <div class="summary-breakdown" id="summaryBreakdown"></div>
-      <button class="btn-primary" style="width:100%;justify-content:center;" onclick="saveToProfile()">
-        💾 Save to Candidate Profile
-      </button>
-      <button class="btn-secondary" style="width:100%;justify-content:center;margin-top:10px;" onclick="resetAssessment()">
-        ↺ Retake Assessment
-      </button>
+      <div class="summary-label">Overall Hotspot Score</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;" id="summaryPhases"></div>
+      <div style="margin-bottom:20px;text-align:left;" id="summaryBreakdown"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;" onclick="saveToProfile()">💾 Save to Candidate Profile</button>
+      <button class="btn-secondary" style="width:100%;justify-content:center;margin-top:10px;" onclick="resetAssessment()">↺ Retake Assessment</button>
     </div>
   </div>
 
-  <!-- Right sidebar -->
   <div class="progress-sidebar">
-
-    <!-- Candidate info -->
-    <div class="candidate-input-section">
-      <div class="card-title">Candidate Info</div>
+    <div class="progress-card-sm">
+      <div class="card-title">Candidate</div>
       <select class="candidate-input" id="candidateSelect">
         <option value="">— Select from batch —</option>
       </select>
-      <input class="candidate-input" type="text" id="candidateName" placeholder="Or enter candidate name">
-      <select class="candidate-input" id="candidateRole">
+      <input class="candidate-input" type="text" id="candidateName" placeholder="Or enter name / ID">
+      <select class="candidate-input" id="candidateRole" style="margin-bottom:0;">
         <option value="">Select role...</option>
         <option value="49-9051.00">Power Line Installer/Repairer</option>
         <option value="49-2022.00">Telecom Equipment Installer</option>
@@ -340,461 +338,496 @@
         <option value="51-8092.00">Gas Plant Operator</option>
         <option value="43-5041.00">Meter Reader, Utilities</option>
       </select>
-      <select class="candidate-input" id="scenarioFilter" onchange="filterScenarios()" style="margin-bottom:0;">
-        <option value="all">All Categories</option>
-        <option value="Safety">Safety</option>
-        <option value="Teamwork">Teamwork</option>
-        <option value="Compliance">Compliance</option>
-        <option value="Ethics">Ethics</option>
-        <option value="Technical">Technical</option>
-      </select>
     </div>
 
-    <!-- Progress -->
     <div class="progress-card-sm">
       <div class="card-title">Progress</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div style="font-size:24px;font-weight:700;color:var(--white);" id="progressFraction">0/8</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div style="font-size:22px;font-weight:700;color:var(--white);" id="progressFraction">0/20</div>
         <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--slate);" id="progressPctLabel">0%</div>
       </div>
-      <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin-bottom:16px;">
+      <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin-bottom:10px;">
         <div id="progressBar" style="height:100%;background:linear-gradient(90deg,var(--blue),var(--teal));border-radius:3px;width:0%;transition:width 0.4s;"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
-        <div style="font-size:12px;">
-          <span style="color:#34D399;font-weight:600;" id="correctCount">0</span>
-          <span style="color:var(--slate);"> correct</span>
-        </div>
-        <div style="font-size:12px;">
-          <span style="color:#F87171;font-weight:600;" id="wrongCount">0</span>
-          <span style="color:var(--slate);"> incorrect</span>
-        </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
+        <span><span style="color:#34D399;font-weight:600;" id="correctCount">0</span> <span style="color:var(--slate);">MC correct</span></span>
+        <span><span style="color:#A78BFA;font-weight:600;" id="saCount">0</span> <span style="color:var(--slate);">SA scored</span></span>
       </div>
-      <div class="scenario-dots" id="scenarioDots"></div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--slate);margin-bottom:6px;">MC Questions</div>
+      <div class="scenario-dots" id="mcDots"></div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--slate);margin:10px 0 6px;">Short Answer</div>
+      <div class="scenario-dots" id="saDots"></div>
     </div>
 
-    <!-- Category breakdown -->
     <div class="progress-card-sm">
       <div class="card-title">Category Scores</div>
-      <div id="categoryBreakdown">
-        <div style="font-size:12px;color:var(--slate);">Complete scenarios to see category breakdown.</div>
-      </div>
+      <div id="categoryBreakdown"><div style="font-size:12px;color:var(--slate);">Complete scenarios to see scores.</div></div>
     </div>
-
   </div>
 </div>
-
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-const SCENARIOS = [
-  {
-    id: 1, category: 'Safety', difficulty: 'High',
-    title: 'Energized Line Hazard',
-    context: 'You are a new Power Line Installer on your first week in the field. Your crew leader asks you to move a piece of equipment close to a power line that appears to be de-energized. You were not part of the LOTO (Lockout/Tagout) process and have not seen the clearance documentation.',
-    question: 'What is the correct course of action?',
-    options: [
-      { letter: 'A', text: 'Trust your crew leader and move the equipment — they have more experience than you.' },
-      { letter: 'B', text: 'Ask to see the LOTO clearance documentation and verify the line is properly de-energized before proceeding.' },
-      { letter: 'C', text: 'Move quickly to get the job done, assuming the crew leader handled the safety steps.' },
-      { letter: 'D', text: 'Refuse to work entirely and leave the site.' },
-    ],
-    correct: 1,
-    feedback: 'Correct. OSHA regulations require all workers to verify LOTO procedures before working near energized equipment — regardless of seniority or verbal assurance. Never assume a line is de-energized. Always verify documentation.',
-    incorrectFeedback: 'Incorrect. The right answer is B. OSHA requires personal verification of LOTO clearance. Trusting verbal assurance, no matter the source, is a leading cause of electrocution fatalities in the utility industry.',
-  },
-  {
-    id: 2, category: 'Teamwork', difficulty: 'Medium',
-    title: 'Crew Disagreement Under Pressure',
-    context: 'During a storm restoration effort, your crew is working overnight to restore power to thousands of customers. An experienced team member suggests a faster method to splice a line that you believe skips a standard safety check. The crew leader is busy coordinating with dispatch.',
-    question: 'What do you do?',
-    options: [
-      { letter: 'A', text: 'Follow the experienced worker — they know shortcuts that are probably fine in emergencies.' },
-      { letter: 'B', text: 'Do nothing and let the crew decide — you are new and do not want to create conflict.' },
-      { letter: 'C', text: 'Calmly raise your concern with the crew leader when they are available, explaining the specific step being skipped.' },
-      { letter: 'D', text: 'Loudly object and refuse to continue working until the full procedure is followed.' },
-    ],
-    correct: 2,
-    feedback: 'Correct. Raising concerns through proper channels — calmly and specifically — is the ideal response. Shortcuts during emergency restoration are a top cause of secondary injuries. Your concern is valid and should be communicated.',
-    incorrectFeedback: 'Incorrect. The right answer is C. Emergencies increase pressure to cut corners, but this is exactly when safety procedures matter most. Staying calm and communicating through proper channels is both safe and professional.',
-  },
-  {
-    id: 3, category: 'Compliance', difficulty: 'Low',
-    title: 'PPE Compliance',
-    context: 'It is a hot summer day and your crew is working on a distribution line maintenance job. Several experienced crew members have removed their hard hats and gloves, saying the job is routine and it is too hot. Your supervisor is not on site.',
-    question: 'What do you do?',
-    options: [
-      { letter: 'A', text: 'Remove your PPE as well — if experienced workers say it is safe, it probably is.' },
-      { letter: 'B', text: 'Keep your PPE on, and if asked, politely explain that you are required to wear it on site.' },
-      { letter: 'C', text: 'Put your PPE in your truck but keep it nearby in case a supervisor arrives.' },
-      { letter: 'D', text: 'Take a photo of the crew without PPE and immediately report them.' },
-    ],
-    correct: 1,
-    feedback: 'Correct. PPE requirements are non-negotiable regardless of conditions or peer pressure. Maintaining your own compliance protects you legally and physically. Peer pressure to remove PPE is one of the most common safety violations.',
-    incorrectFeedback: 'Incorrect. The right answer is B. PPE is mandatory regardless of experience level, weather, or social pressure. You are responsible for your own compliance — and modeling the right behavior can influence others.',
-  },
-  {
-    id: 4, category: 'Ethics', difficulty: 'Medium',
-    title: 'Reporting a Near Miss',
-    context: 'While performing routine maintenance, a piece of equipment slips and narrowly misses injuring a coworker. No one is hurt, nothing is damaged, and the job continues without issue. Your coworker asks you not to report it because they are worried about their safety record.',
-    question: 'What is the appropriate response?',
-    options: [
-      { letter: 'A', text: 'Agree not to report it — no one was hurt and your coworker is worried about their job.' },
-      { letter: 'B', text: 'Report the near miss through the proper safety reporting channel, explaining that near-miss reports help prevent future injuries.' },
-      { letter: 'C', text: 'Tell your coworker you will think about it and decide later.' },
-      { letter: 'D', text: 'Mention it informally to a supervisor but do not file a formal report.' },
-    ],
-    correct: 1,
-    feedback: 'Correct. Near-miss reporting is a critical safety practice. Near misses are leading indicators of future accidents. Reporting them — even when nothing bad happened — is required by most utility safety programs and protects everyone on the crew.',
-    incorrectFeedback: 'Incorrect. The right answer is B. Near-miss reports are not about punishment — they are about learning and preventing future injuries. Withholding a near-miss report can put the entire crew at risk.',
-  },
-  {
-    id: 5, category: 'Technical', difficulty: 'High',
-    title: 'Unexpected Voltage Reading',
-    context: 'You are testing a section of line that was supposed to be de-energized for maintenance. Your voltage meter gives an unexpected non-zero reading. The job is behind schedule and the crew leader says the meter is probably faulty.',
-    question: 'What is the correct action?',
-    options: [
-      { letter: 'A', text: 'Proceed with the work — the meter is likely defective and the schedule is important.' },
-      { letter: 'B', text: 'Stop work, treat the line as energized, verify with a second meter, and escalate to a supervisor.' },
-      { letter: 'C', text: 'Try a different part of the line that gives a zero reading and proceed there.' },
-      { letter: 'D', text: 'Ask a more experienced worker to touch the line to verify.' },
-    ],
-    correct: 1,
-    feedback: 'Correct. An unexpected voltage reading must always be treated as real until proven otherwise with a second verified instrument. The principle of "assume energized" is the single most important rule in electrical safety. Schedule pressure never overrides safety.',
-    incorrectFeedback: 'Incorrect. The right answer is B. Any unexpected voltage reading must be treated as a live line. Using a second calibrated meter and escalating to a supervisor is the only acceptable response. Assumptions kill.',
-  },
-  {
-    id: 6, category: 'Safety', difficulty: 'Medium',
-    title: 'Working at Height',
-    context: 'You are climbing a utility pole for a routine inspection. Halfway up, you notice your safety harness has a small fraying on one of the straps. The damage looks minor and the job is nearly complete.',
-    question: 'What should you do?',
-    options: [
-      { letter: 'A', text: 'Continue — the damage is small and you are almost done.' },
-      { letter: 'B', text: 'Descend carefully, report the damaged equipment, and do not use it until it is inspected.' },
-      { letter: 'C', text: 'Climb faster to finish before the fraying gets worse.' },
-      { letter: 'D', text: 'Tie a knot around the frayed area to reinforce it and continue.' },
-    ],
-    correct: 1,
-    feedback: 'Correct. Any damage to fall protection equipment requires immediate removal from service. Frayed harness straps can fail without warning and result in fatal falls. No task is worth the risk of compromised fall protection.',
-    incorrectFeedback: 'Incorrect. The right answer is B. Damaged fall protection equipment must be immediately removed from service — regardless of the extent of damage, how close you are to finishing, or any improvised fixes. Falls are the leading cause of fatalities in utility work.',
-  },
-  {
-    id: 7, category: 'Teamwork', difficulty: 'Low',
-    title: 'New Employee Onboarding',
-    context: 'A new apprentice joins your crew and is struggling to keep up with the pace of work. Other crew members are frustrated and making comments under their breath. The new employee looks embarrassed and discouraged.',
-    question: 'What is the most appropriate response?',
-    options: [
-      { letter: 'A', text: 'Ignore it — it is not your place to intervene with crew dynamics.' },
-      { letter: 'B', text: 'Join in the comments — peer pressure will motivate them to improve faster.' },
-      { letter: 'C', text: 'Offer to help the new employee with the task they are struggling with, and encourage a supportive tone with the crew.' },
-      { letter: 'D', text: 'Report the crew members to the supervisor immediately for creating a hostile environment.' },
-    ],
-    correct: 2,
-    feedback: 'Correct. A supportive crew environment reduces turnover and safety incidents. Offering direct help and modeling a positive tone is the most effective response — it helps the new employee and shifts the crew culture without escalating unnecessarily.',
-    incorrectFeedback: 'Incorrect. The right answer is C. Peer support and a positive crew culture significantly improve safety outcomes and retention. Direct help combined with modeling good behavior is the most effective and professional approach.',
-  },
-  {
-    id: 8, category: 'Compliance', difficulty: 'High',
-    title: 'Customer Data and Site Access',
-    context: 'A customer at a residential meter reading site asks you to look up the account details of their neighbor on your utility tablet, claiming there is a billing dispute. Your tablet has access to customer account data.',
-    question: 'What is the correct response?',
-    options: [
-      { letter: 'A', text: 'Look it up quickly — the customer seems legitimate and you want to be helpful.' },
-      { letter: 'B', text: 'Apologize and explain that you cannot access or share another customer\'s account information, and direct them to customer service.' },
-      { letter: 'C', text: 'Show them only the billing amount without personal details.' },
-      { letter: 'D', text: 'Tell them to file a complaint with the utility company later.' },
-    ],
-    correct: 1,
-    feedback: 'Correct. Accessing or sharing customer account data without authorization violates privacy regulations and utility policy. The only appropriate response is to decline and direct the customer to the proper channel. This protects you, the company, and the customer.',
-    incorrectFeedback: 'Incorrect. The right answer is B. Customer data privacy is protected by law. Accessing another customer\'s account data — even partially — without authorization is a serious compliance violation that can result in termination and legal liability.',
-  },
+const API_BASE = '{{ api_base }}';
+
+const CAT_COLORS = {
+  Safety:'var(--teal)', Teamwork:'var(--blue-light)',
+  Compliance:'#F59E0B', Ethics:'#A78BFA', Technical:'#34D399'
+};
+
+const MC_SCENARIOS = [
+  {id:1,category:'Safety',difficulty:'High',type:'mc',title:'Energized Line Hazard',
+   context:'You are a new Power Line Installer on your first week in the field. Your crew leader asks you to move equipment near a power line that appears de-energized. You were not part of the LOTO process and have not seen clearance documentation.',
+   question:'What is the correct course of action?',
+   options:[{letter:'A',text:'Trust your crew leader — they have more experience than you.'},{letter:'B',text:'Ask to see the LOTO clearance documentation and verify the line is de-energized before proceeding.'},{letter:'C',text:'Move quickly to get the job done, assuming the crew leader handled safety.'},{letter:'D',text:'Refuse to work entirely and leave the site.'}],
+   correct:1,feedback:'OSHA requires all workers to verify LOTO procedures before working near energized equipment — regardless of seniority or verbal assurance. Never assume a line is de-energized.',incorrectFeedback:'The right answer is B. OSHA requires personal verification of LOTO clearance. Verbal assurance, no matter the source, is a leading cause of electrocution fatalities.'},
+  {id:2,category:'Safety',difficulty:'Medium',type:'mc',title:'Damaged Fall Protection',
+   context:'You are climbing a utility pole for a routine inspection. Halfway up, you notice your safety harness has fraying on one of the straps. The damage looks minor and the job is nearly complete.',
+   question:'What should you do?',
+   options:[{letter:'A',text:'Continue — the damage is minor and you are almost done.'},{letter:'B',text:'Descend carefully, report the damaged equipment, and do not use it until inspected.'},{letter:'C',text:'Climb faster to finish before the fraying gets worse.'},{letter:'D',text:'Tie a knot around the frayed area to reinforce it and continue.'}],
+   correct:1,feedback:'Any damage to fall protection equipment requires immediate removal from service. Frayed harness straps can fail without warning. No task is worth compromised fall protection.',incorrectFeedback:'The right answer is B. Damaged fall protection must be immediately removed from service. Falls are the leading cause of fatalities in utility work.'},
+  {id:3,category:'Safety',difficulty:'High',type:'mc',title:'Unexpected Voltage Reading',
+   context:'You are testing a line that was supposed to be de-energized for maintenance. Your voltage meter gives an unexpected non-zero reading. The job is behind schedule and the crew leader says the meter is probably faulty.',
+   question:'What is the correct action?',
+   options:[{letter:'A',text:'Proceed — the meter is likely defective and the schedule matters.'},{letter:'B',text:'Stop work, treat the line as energized, verify with a second meter, and escalate to a supervisor.'},{letter:'C',text:'Try a different part of the line that gives a zero reading.'},{letter:'D',text:'Ask an experienced worker to touch the line to verify.'}],
+   correct:1,feedback:'An unexpected voltage reading must always be treated as real until proven otherwise with a second verified instrument. Schedule pressure never overrides safety.',incorrectFeedback:'The right answer is B. Any unexpected voltage reading must be treated as a live line. Assumptions kill.'},
+  {id:4,category:'Teamwork',difficulty:'Medium',type:'mc',title:'Crew Disagreement Under Pressure',
+   context:'During a storm restoration effort, your crew is working overnight. An experienced team member suggests a faster method to splice a line that you believe skips a standard safety check. The crew leader is busy with dispatch.',
+   question:'What do you do?',
+   options:[{letter:'A',text:'Follow the experienced worker — they know safe shortcuts in emergencies.'},{letter:'B',text:'Do nothing — you are new and do not want to create conflict.'},{letter:'C',text:'Calmly raise your concern with the crew leader when available, explaining the step being skipped.'},{letter:'D',text:'Loudly object and refuse to continue working.'}],
+   correct:2,feedback:'Raising concerns through proper channels — calmly and specifically — is ideal. Emergencies increase pressure to cut corners, but this is exactly when safety procedures matter most.',incorrectFeedback:'The right answer is C. Staying calm and communicating through proper channels is both safe and professional.'},
+  {id:5,category:'Teamwork',difficulty:'Low',type:'mc',title:'Supporting a New Employee',
+   context:'A new apprentice joins your crew and is struggling to keep up. Other crew members are frustrated and making comments. The new employee looks embarrassed and discouraged.',
+   question:'What is the most appropriate response?',
+   options:[{letter:'A',text:'Ignore it — it is not your place to intervene.'},{letter:'B',text:'Join in — peer pressure will motivate them to improve.'},{letter:'C',text:'Offer to help and encourage a supportive tone with the crew.'},{letter:'D',text:'Report the crew members to the supervisor immediately.'}],
+   correct:2,feedback:'A supportive crew environment reduces turnover and safety incidents. Direct help combined with modeling good behavior is the most effective and professional approach.',incorrectFeedback:'The right answer is C. Peer support and positive crew culture significantly improve safety outcomes and retention.'},
+  {id:6,category:'Teamwork',difficulty:'Medium',type:'mc',title:'Shift Handoff Communication',
+   context:'Your shift is ending and the incoming crew will be continuing a partially completed line repair. You noticed a non-critical loose fitting earlier that you did not have time to address.',
+   question:'What is the appropriate action before leaving?',
+   options:[{letter:'A',text:'Leave without mentioning it — they will likely notice.'},{letter:'B',text:'Write a brief note and leave it at the worksite.'},{letter:'C',text:'Verbally inform the incoming crew leader and document it in the shift log.'},{letter:'D',text:'Fix it yourself even though it means significant overtime.'}],
+   correct:2,feedback:'Effective shift handoff communication prevents incidents. Verbal notification to the incoming crew leader plus documentation ensures the issue is known, tracked, and addressed safely.',incorrectFeedback:'The right answer is C. Verbal communication plus documentation ensures nothing falls through the cracks during shift transitions, a common time for incidents.'},
+  {id:7,category:'Compliance',difficulty:'Low',type:'mc',title:'PPE Compliance',
+   context:'It is a hot summer day and your crew is doing routine line maintenance. Several experienced crew members have removed their hard hats and gloves. Your supervisor is not on site.',
+   question:'What do you do?',
+   options:[{letter:'A',text:'Remove your PPE — experienced workers say it is safe.'},{letter:'B',text:'Keep your PPE on and politely explain you are required to wear it.'},{letter:'C',text:'Put your PPE in your truck but keep it nearby.'},{letter:'D',text:'Take a photo of the crew and immediately report them.'}],
+   correct:1,feedback:'PPE requirements are non-negotiable regardless of conditions or peer pressure. Maintaining your own compliance protects you legally and physically.',incorrectFeedback:'The right answer is B. PPE is mandatory regardless of experience level, weather, or social pressure.'},
+  {id:8,category:'Compliance',difficulty:'Medium',type:'mc',title:'Customer Data Privacy',
+   context:"A customer at a residential meter reading site asks you to look up their neighbor's account details on your utility tablet, claiming there is a billing dispute.",
+   question:'What is the correct response?',
+   options:[{letter:'A',text:'Look it up quickly — the customer seems legitimate and you want to help.'},{letter:'B',text:'Decline and direct them to customer service to handle the billing dispute.'},{letter:'C',text:'Show them only the billing amount without personal details.'},{letter:'D',text:'Tell them to file a complaint later.'}],
+   correct:1,feedback:'Accessing or sharing customer account data without authorization violates privacy regulations. The only appropriate response is to decline and direct the customer to the proper channel.',incorrectFeedback:'The right answer is B. Customer data privacy is protected by law. Even partial access without authorization is a serious compliance violation.'},
+  {id:9,category:'Compliance',difficulty:'High',type:'mc',title:'Permit to Work Expiration',
+   context:'You are mid-task on a high-voltage switching operation when you realize the Permit to Work document expired 20 minutes ago. The task is 80% complete.',
+   question:'What is the correct action?',
+   options:[{letter:'A',text:'Finish the remaining 20% quickly — incomplete systems are more dangerous.'},{letter:'B',text:'Stop work immediately, make the system safe, and obtain a new permit before continuing.'},{letter:'C',text:'Contact your supervisor and continue working while they sort out the permit.'},{letter:'D',text:'Note the expiration in your log and continue — permits are administrative anyway.'}],
+   correct:1,feedback:'A Permit to Work is a legal safety document. Working without a valid permit is a serious compliance violation regardless of how close the work is to completion.',incorrectFeedback:'The right answer is B. Permits to Work are not administrative — they are active safety controls. Continuing without one is a serious regulatory and safety violation.'},
+  {id:10,category:'Ethics',difficulty:'Medium',type:'mc',title:'Reporting a Near Miss',
+   context:'A piece of equipment slips and narrowly misses injuring a coworker. No one is hurt, nothing is damaged. Your coworker asks you not to report it because they are worried about their safety record.',
+   question:'What is the appropriate response?',
+   options:[{letter:'A',text:'Agree not to report it — no one was hurt.'},{letter:'B',text:'Report the near miss through the proper safety reporting channel.'},{letter:'C',text:'Tell your coworker you will think about it and decide later.'},{letter:'D',text:'Mention it informally to a supervisor but do not file a formal report.'}],
+   correct:1,feedback:'Near-miss reporting is a critical safety practice. Near misses are leading indicators of future accidents. Reporting them — even when nothing bad happened — is required and protects everyone.',incorrectFeedback:'The right answer is B. Near-miss reports are not about punishment — they prevent future accidents.'},
+  {id:11,category:'Ethics',difficulty:'Low',type:'mc',title:'Timesheet Accuracy',
+   context:'Your crew supervisor tells the team they can round up their hours by 30 minutes each day on their timesheets — "everyone does it and it all evens out."',
+   question:'What do you do?',
+   options:[{letter:'A',text:'Round up your hours as the supervisor says — they have authority.'},{letter:'B',text:'Record your accurate hours and privately raise your concern with HR or a higher-level manager.'},{letter:'C',text:'Round up this week only and mention it to HR next week.'},{letter:'D',text:'Ask your coworkers what they plan to do and follow the majority.'}],
+   correct:1,feedback:'Falsifying timesheets is fraud regardless of who instructs you to do it. Recording accurate hours and raising the concern through proper channels is the only ethical response.',incorrectFeedback:'The right answer is B. Falsifying timesheets is fraud. Following unlawful instructions does not shield you from liability.'},
+  {id:12,category:'Ethics',difficulty:'High',type:'mc',title:'Conflict of Interest',
+   context:'Your utility company is evaluating bids for a subcontractor. You discover one bidding company is owned by your brother-in-law. You are on the evaluation committee.',
+   question:'What is the ethical course of action?',
+   options:[{letter:'A',text:'Evaluate the bid objectively — your family connection should not affect your judgment.'},{letter:'B',text:'Disclose the relationship to your manager and recuse yourself from evaluating that bid.'},{letter:'C',text:'Score the bid slightly lower than its merits to avoid any appearance of favoritism.'},{letter:'D',text:"Tell your brother-in-law to withdraw to avoid complications."}],
+   correct:1,feedback:'Any actual or perceived conflict of interest must be disclosed immediately. Recusal is the only appropriate response — even if you believe you can be objective.',incorrectFeedback:'The right answer is B. Disclosure and recusal are mandatory when a conflict of interest exists.'},
+  {id:13,category:'Technical',difficulty:'Medium',type:'mc',title:'Equipment Calibration',
+   context:'You are about to use a voltage tester that was last calibrated 14 months ago. Company policy requires calibration every 12 months. The equipment physically appears to be in good condition.',
+   question:'What is the correct approach?',
+   options:[{letter:'A',text:'Use it — physical condition is the best indicator of accuracy.'},{letter:'B',text:'Use it for this job only and flag it for calibration afterward.'},{letter:'C',text:'Do not use the equipment until it has been recalibrated per company policy.'},{letter:'D',text:'Use it alongside another tester to cross-check readings.'}],
+   correct:2,feedback:'Calibration schedules exist because instruments can drift in accuracy without visible signs of damage. Using out-of-calibration equipment on electrical work is a safety and compliance violation.',incorrectFeedback:'The right answer is C. An instrument that appears fine can still produce inaccurate readings. Calibration schedules are non-negotiable for safety-critical measurements.'},
+  {id:14,category:'Technical',difficulty:'High',type:'mc',title:'Fault Isolation Communication',
+   context:'You are responding to an outage affecting 400 customers. Your supervisor is asking for an estimated restoration time but you need more data before you can be confident.',
+   question:'What is the most appropriate response to your supervisor?',
+   options:[{letter:'A',text:'Give a confident estimate based on your gut feeling — supervisors need certainty.'},{letter:'B',text:'Say you have no idea and ask them to call back later.'},{letter:'C',text:'Provide your best current estimate with the specific data you still need, and a time when you can update them.'},{letter:'D',text:'Transfer the call to a more experienced colleague.'}],
+   correct:2,feedback:'Professional communication during an outage requires honesty about uncertainty while still being actionable. A qualified estimate with clear information gaps and a follow-up commitment is the gold standard.',incorrectFeedback:'The right answer is C. A qualified estimate with clear information gaps and a follow-up commitment is more useful than false certainty or silence.'},
+  {id:15,category:'Technical',difficulty:'Medium',type:'mc',title:'Load Calculation Error',
+   context:"While reviewing a colleague's load calculation for a new transformer installation, you notice an error that would result in the transformer being undersized by 15%. Your colleague has already submitted the design for approval.",
+   question:'What do you do?',
+   options:[{letter:'A',text:"Say nothing — it is their design and they may have accounted for it elsewhere."},{letter:'B',text:'Quietly fix it yourself in the system without telling anyone.'},{letter:'C',text:"Inform your colleague of the error privately so they can correct and resubmit."},{letter:'D',text:'Report it directly to the approving engineer, bypassing your colleague.'}],
+   correct:2,feedback:'Informing your colleague first gives them the opportunity to correct their own work, which is professional and preserves the relationship while solving the problem.',incorrectFeedback:'The right answer is C. Peer review and professional correction is the right approach. An undersized transformer would fail under peak load.'},
 ];
 
-let currentIdx  = 0;
-let answers     = {};  // { scenarioId: { selected, correct } }
-let filtered    = [...SCENARIOS];
+const SA_SCENARIOS = [
+  {id:'sa1',category:'Safety',type:'sa',title:'Safety Culture Response',
+   context:'You have just joined a new utility crew. During your first week, you observe that the crew routinely skips the pre-job safety briefing, saying it is a waste of time for experienced workers.',
+   question:'Describe how you would handle this situation over your first month on the job. What specific actions would you take, and why?'},
+  {id:'sa2',category:'Teamwork',type:'sa',title:'Cross-Crew Conflict',
+   context:'Your crew and another crew are competing for the same staging area during a major restoration effort. Tensions have escalated and both crews are working inefficiently because of the conflict.',
+   question:'As a member of one of the crews, what steps would you take to help resolve the situation? Describe both your immediate actions and any longer-term approach.'},
+  {id:'sa3',category:'Compliance',type:'sa',title:'Regulatory Compliance Pressure',
+   context:'Your manager tells you that due to project timeline pressure, certain environmental monitoring documentation can be "filled in later" rather than completed in real time as required by your permit.',
+   question:'How do you respond to your manager, and what do you do next? Consider both the immediate conversation and any follow-up actions.'},
+  {id:'sa4',category:'Ethics',type:'sa',title:'Whistleblower Dilemma',
+   context:'You discover that a senior colleague has been falsifying inspection records for several months. The colleague is well-liked, close to retirement, and the falsified records have not yet caused any incidents.',
+   question:'What do you do? Walk through your decision-making process and the actions you would take.'},
+  {id:'sa5',category:'Technical',type:'sa',title:'Emergency Technical Decision',
+   context:'During a major storm, you are the most senior technician on site. A critical switching operation must be completed to restore power to a hospital, but conditions are worse than anticipated and the standard procedure would take 45 more minutes. You believe a modified approach could work in 15 minutes but it has not been formally approved.',
+   question:'How do you handle this situation? What factors do you weigh, who do you contact, and what do you ultimately decide?'},
+];
 
-function filterScenarios() {
-  const cat = document.getElementById('scenarioFilter').value;
-  filtered = cat === 'all' ? [...SCENARIOS] : SCENARIOS.filter(s => s.category === cat);
-  currentIdx = 0;
-  answers = {};
+let currentPhase = 'mc';
+let currentMcIdx = 0;
+let currentSaIdx = 0;
+let mcAnswers = {};
+let saAnswers = {};
+
+function switchPhase(phase) {
+  currentPhase = phase;
+  document.getElementById('tab-mc').classList.toggle('active', phase === 'mc');
+  document.getElementById('tab-sa').classList.toggle('active', phase === 'sa');
   renderScenario();
-  renderDots();
-  updateProgress();
 }
 
 function renderScenario() {
-  if (currentIdx >= filtered.length) {
-    showSummary(); return;
-  }
+  if (currentPhase === 'mc') renderMC(MC_SCENARIOS[currentMcIdx]);
+  else renderSA(SA_SCENARIOS[currentSaIdx]);
+  updateProgress(); renderDots(); updateCategoryBreakdown();
+}
 
-  const s = filtered[currentIdx];
-  document.getElementById('scenarioNumber').textContent = String(currentIdx + 1).padStart(2, '0');
+function renderMC(s) {
+  document.getElementById('scenarioNumber').textContent = String(s.id).padStart(2,'0');
   document.getElementById('scenarioCategory').textContent = s.category;
-
-  const catColors = {
-    Safety: 'var(--teal)', Teamwork: 'var(--blue-light)',
-    Compliance: '#F59E0B', Ethics: '#A78BFA', Technical: '#34D399'
-  };
-  document.getElementById('scenarioCategory').style.color = catColors[s.category] || 'var(--blue-light)';
+  document.getElementById('scenarioCategory').style.color = CAT_COLORS[s.category]||'var(--blue-light)';
   document.getElementById('scenarioTitle').textContent = s.title;
-
   const diffEl = document.getElementById('scenarioDifficulty');
   diffEl.textContent = s.difficulty;
   diffEl.className = 'scenario-difficulty diff-' + s.difficulty.toLowerCase();
-
+  diffEl.style.cssText = '';
   document.getElementById('scenarioContext').textContent = s.context;
   document.getElementById('scenarioQuestion').textContent = s.question;
+  document.getElementById('saSection').style.display = 'none';
+  document.getElementById('optionsList').style.display = 'flex';
 
-  // Render options
   const list = document.getElementById('optionsList');
   list.innerHTML = '';
-  s.options.forEach((opt, i) => {
+  s.options.forEach((opt,i) => {
     const btn = document.createElement('button');
     btn.className = 'option-btn';
     btn.innerHTML = `<span class="option-letter">${opt.letter}</span><span>${opt.text}</span>`;
-
-    const existing = answers[s.id];
+    const existing = mcAnswers[s.id];
     if (existing !== undefined) {
       btn.disabled = true;
       if (i === s.correct) btn.classList.add('correct');
       else if (i === existing.selected) btn.classList.add('incorrect');
-    } else {
-      btn.onclick = () => selectAnswer(i);
-    }
+    } else { btn.onclick = () => selectMC(i); }
     list.appendChild(btn);
   });
 
-  // Feedback
   const fb = document.getElementById('feedbackCard');
-  const existing = answers[s.id];
+  const existing = mcAnswers[s.id];
   if (existing !== undefined) {
     fb.style.display = 'block';
-    if (existing.correct) {
-      fb.className = 'feedback-card correct-fb';
-      document.getElementById('feedbackTitle').innerHTML = '✓ Correct';
-      document.getElementById('feedbackTitle').style.color = '#34D399';
-      document.getElementById('feedbackText').textContent = s.feedback;
-      document.getElementById('feedbackText').style.color = 'var(--slate-light)';
-    } else {
-      fb.className = 'feedback-card incorrect-fb';
-      document.getElementById('feedbackTitle').innerHTML = '✗ Incorrect';
-      document.getElementById('feedbackTitle').style.color = '#F87171';
-      document.getElementById('feedbackText').textContent = s.incorrectFeedback;
-      document.getElementById('feedbackText').style.color = 'var(--slate-light)';
-    }
-  } else {
-    fb.style.display = 'none';
-  }
+    fb.className = 'feedback-card ' + (existing.correct ? 'correct-fb' : 'incorrect-fb');
+    document.getElementById('feedbackTitle').innerHTML = existing.correct ? '✓ Correct' : '✗ Incorrect';
+    document.getElementById('feedbackTitle').style.color = existing.correct ? '#34D399' : '#F87171';
+    document.getElementById('feedbackText').textContent = existing.correct ? s.feedback : s.incorrectFeedback;
+  } else { fb.style.display = 'none'; }
 
-  // Nav buttons
-  document.getElementById('prevBtn').style.display = currentIdx > 0 ? 'flex' : 'none';
   const answered = existing !== undefined;
-  const isLast = currentIdx === filtered.length - 1;
+  const isLast = currentMcIdx === MC_SCENARIOS.length - 1;
+  document.getElementById('prevBtn').style.display = currentMcIdx > 0 ? 'flex' : 'none';
   document.getElementById('nextBtn').style.display   = answered && !isLast ? 'flex' : 'none';
-  document.getElementById('finishBtn').style.display = answered && isLast  ? 'flex' : 'none';
+  document.getElementById('finishBtn').style.display = 'none';
   document.getElementById('navHint').style.display   = !answered ? 'block' : 'none';
-
-  renderDots();
 }
 
-function selectAnswer(optIdx) {
-  const s = filtered[currentIdx];
-  const isCorrect = optIdx === s.correct;
-  answers[s.id] = { selected: optIdx, correct: isCorrect };
+function renderSA(s) {
+  const saIdx = SA_SCENARIOS.indexOf(s);
+  document.getElementById('scenarioNumber').textContent = 'SA' + String(saIdx+1).padStart(2,'0');
+  document.getElementById('scenarioCategory').textContent = s.category;
+  document.getElementById('scenarioCategory').style.color = CAT_COLORS[s.category]||'#A78BFA';
+  document.getElementById('scenarioTitle').textContent = s.title;
+  const diffEl = document.getElementById('scenarioDifficulty');
+  diffEl.textContent = 'Open Response';
+  diffEl.style.cssText = 'background:rgba(124,58,237,0.12);color:#A78BFA;border:1px solid rgba(124,58,237,0.25);padding:4px 12px;border-radius:20px;font-family:DM Mono,monospace;font-size:10px;font-weight:600;margin-left:auto;flex-shrink:0;letter-spacing:0.5px;';
+  document.getElementById('scenarioContext').textContent = s.context;
+  document.getElementById('scenarioQuestion').textContent = '';
+  document.getElementById('optionsList').style.display = 'none';
+  document.getElementById('feedbackCard').style.display = 'none';
+  document.getElementById('saSection').style.display = 'block';
+  document.getElementById('saQuestion').textContent = s.question;
 
-  // Style options
-  const btns = document.querySelectorAll('.option-btn');
-  btns.forEach((btn, i) => {
+  const existing = saAnswers[s.id];
+  const textarea = document.getElementById('saTextarea');
+  const submitBtn = document.getElementById('saSubmitBtn');
+  const assessment = document.getElementById('geminiAssessment');
+
+  if (existing) {
+    textarea.value = existing.response;
+    textarea.disabled = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Response Submitted';
+    renderGeminiResult(existing.assessment);
+    assessment.classList.add('visible');
+  } else {
+    textarea.value = '';
+    textarea.disabled = false;
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit for AI Assessment';
+    assessment.classList.remove('visible');
+    assessment.innerHTML = '';
+  }
+
+  document.getElementById('geminiLoading').style.display = 'none';
+
+  const isLast = currentSaIdx === SA_SCENARIOS.length - 1;
+  document.getElementById('prevBtn').style.display = currentSaIdx > 0 ? 'flex' : 'none';
+  document.getElementById('nextBtn').style.display   = existing && !isLast ? 'flex' : 'none';
+  document.getElementById('finishBtn').style.display = existing && isLast ? 'flex' : 'none';
+  document.getElementById('navHint').style.display   = !existing ? 'block' : 'none';
+}
+
+function selectMC(optIdx) {
+  const s = MC_SCENARIOS[currentMcIdx];
+  const isCorrect = optIdx === s.correct;
+  mcAnswers[s.id] = { selected: optIdx, correct: isCorrect };
+
+  document.querySelectorAll('.option-btn').forEach((btn,i) => {
     btn.disabled = true;
     if (i === s.correct) btn.classList.add('correct');
     else if (i === optIdx) btn.classList.add('incorrect');
   });
 
-  // Show feedback
   const fb = document.getElementById('feedbackCard');
   fb.style.display = 'block';
-  if (isCorrect) {
-    fb.className = 'feedback-card correct-fb';
-    document.getElementById('feedbackTitle').innerHTML = '✓ Correct';
-    document.getElementById('feedbackTitle').style.color = '#34D399';
-    document.getElementById('feedbackText').textContent = s.feedback;
-  } else {
-    fb.className = 'feedback-card incorrect-fb';
-    document.getElementById('feedbackTitle').innerHTML = '✗ Incorrect';
-    document.getElementById('feedbackTitle').style.color = '#F87171';
-    document.getElementById('feedbackText').textContent = s.incorrectFeedback;
-  }
-  document.getElementById('feedbackText').style.color = 'var(--slate-light)';
+  fb.className = 'feedback-card ' + (isCorrect ? 'correct-fb' : 'incorrect-fb');
+  document.getElementById('feedbackTitle').innerHTML = isCorrect ? '✓ Correct' : '✗ Incorrect';
+  document.getElementById('feedbackTitle').style.color = isCorrect ? '#34D399' : '#F87171';
+  document.getElementById('feedbackText').textContent = isCorrect ? s.feedback : s.incorrectFeedback;
 
-  const isLast = currentIdx === filtered.length - 1;
+  const isLast = currentMcIdx === MC_SCENARIOS.length - 1;
   document.getElementById('nextBtn').style.display   = !isLast ? 'flex' : 'none';
-  document.getElementById('finishBtn').style.display = isLast  ? 'flex' : 'none';
+  document.getElementById('finishBtn').style.display = 'none';
   document.getElementById('navHint').style.display   = 'none';
+  updateProgress(); renderDots(); updateCategoryBreakdown();
+}
 
-  updateProgress();
-  renderDots();
-  updateCategoryBreakdown();
+async function submitShortAnswer() {
+  const s = SA_SCENARIOS[currentSaIdx];
+  const response = document.getElementById('saTextarea').value.trim();
+  if (!response || response.length < 20) { alert('Please write a more detailed response before submitting.'); return; }
+
+  const role = document.getElementById('candidateRole').value || 'utility worker';
+  document.getElementById('saSubmitBtn').disabled = true;
+  document.getElementById('saTextarea').disabled = true;
+  document.getElementById('geminiLoading').style.display = 'flex';
+  document.getElementById('geminiAssessment').classList.remove('visible');
+
+  try {
+    const res = await fetch('/api/assess-hotspot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: s.question, category: s.category, response, role })
+    });
+    const assessment = await res.json();
+    saAnswers[s.id] = { response, assessment };
+    renderGeminiResult(assessment);
+    document.getElementById('geminiAssessment').classList.add('visible');
+    document.getElementById('saSubmitBtn').textContent = 'Response Submitted';
+
+    const isLast = currentSaIdx === SA_SCENARIOS.length - 1;
+    document.getElementById('nextBtn').style.display   = !isLast ? 'flex' : 'none';
+    document.getElementById('finishBtn').style.display = isLast  ? 'flex' : 'none';
+    document.getElementById('navHint').style.display   = 'none';
+  } catch(e) {
+    alert('Assessment failed: ' + e.message);
+    document.getElementById('saSubmitBtn').disabled = false;
+    document.getElementById('saTextarea').disabled = false;
+  } finally {
+    document.getElementById('geminiLoading').style.display = 'none';
+  }
+  updateProgress(); renderDots(); updateCategoryBreakdown();
+}
+
+function renderGeminiResult(a) {
+  const sc = (v) => v >= 8 ? '#34D399' : v >= 6 ? '#FCD34D' : '#F87171';
+  document.getElementById('geminiAssessment').innerHTML = `
+    <div class="gemini-scores">
+      <div class="gemini-score-item"><div class="gemini-score-val" style="color:${sc(a.safety_awareness)};">${a.safety_awareness}/10</div><div class="gemini-score-label">Safety Awareness</div></div>
+      <div class="gemini-score-item"><div class="gemini-score-val" style="color:${sc(a.communication_clarity)};">${a.communication_clarity}/10</div><div class="gemini-score-label">Communication</div></div>
+      <div class="gemini-score-item"><div class="gemini-score-val" style="color:${sc(a.decision_quality)};">${a.decision_quality}/10</div><div class="gemini-score-label">Decision Quality</div></div>
+      <div class="gemini-score-item"><div class="gemini-score-val" style="color:${sc(a.professional_judgment)};">${a.professional_judgment}/10</div><div class="gemini-score-label">Prof. Judgment</div></div>
+    </div>
+    <div style="text-align:center;margin-bottom:12px;padding:10px;background:rgba(124,58,237,0.08);border-radius:8px;">
+      <div style="font-family:'DM Serif Display',serif;font-size:28px;color:#A78BFA;">${a.overall_score}/10</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--slate);">Overall Score</div>
+    </div>
+    <div class="gemini-feedback">${a.feedback}</div>
+    <div class="gemini-rec">💡 ${a.recommendation}</div>`;
 }
 
 function nextScenario() {
-  if (currentIdx < filtered.length - 1) { currentIdx++; renderScenario(); }
+  if (currentPhase === 'mc') { if (currentMcIdx < MC_SCENARIOS.length-1) { currentMcIdx++; renderScenario(); } }
+  else { if (currentSaIdx < SA_SCENARIOS.length-1) { currentSaIdx++; renderScenario(); } }
 }
 
 function prevScenario() {
-  if (currentIdx > 0) { currentIdx--; renderScenario(); }
+  if (currentPhase === 'mc') { if (currentMcIdx > 0) { currentMcIdx--; renderScenario(); } }
+  else { if (currentSaIdx > 0) { currentSaIdx--; renderScenario(); } }
 }
 
-function finishAssessment() { showSummary(); }
-
-function showSummary() {
+function finishAssessment() {
   document.getElementById('scenarioCard').style.display = 'none';
   const summary = document.getElementById('scoreSummary');
   summary.style.display = 'block';
 
-  const total   = filtered.length;
-  const correct = Object.values(answers).filter(a => a.correct).length;
-  const score   = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const mcTotal = MC_SCENARIOS.length;
+  const mcCorrect = Object.values(mcAnswers).filter(a => a.correct).length;
+  const mcPct = Math.round((mcCorrect/mcTotal)*100);
 
+  const saTotal = SA_SCENARIOS.length;
+  const saScored = Object.values(saAnswers).length;
+  const saAvg = saScored > 0
+    ? Math.round(Object.values(saAnswers).reduce((s,a) => s+(a.assessment?.overall_score||0),0)/saScored*10)
+    : 0;
+
+  const overall = Math.round(mcPct*0.6 + saAvg*0.4);
   const scoreEl = document.getElementById('summaryScore');
-  scoreEl.textContent = score + '%';
-  scoreEl.style.color = score >= 75 ? '#34D399' : score >= 50 ? '#FCD34D' : '#F87171';
+  scoreEl.textContent = overall + '%';
+  scoreEl.style.color = overall >= 75 ? '#34D399' : overall >= 50 ? '#FCD34D' : '#F87171';
 
-  // Category breakdown
+  document.getElementById('summaryPhases').innerHTML = `
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-family:'DM Serif Display',serif;font-size:28px;color:${mcPct>=75?'#34D399':mcPct>=50?'#FCD34D':'#F87171'};">${mcPct}%</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--slate);margin-top:4px;">MC Score (${mcCorrect}/${mcTotal})</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-family:'DM Serif Display',serif;font-size:28px;color:${saAvg>=70?'#34D399':saAvg>=50?'#FCD34D':'#F87171'};">${saAvg}%</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--slate);margin-top:4px;">SA Score (${saScored}/${saTotal})</div>
+    </div>`;
+
   const cats = {};
-  filtered.forEach(s => {
-    if (!cats[s.category]) cats[s.category] = { total: 0, correct: 0 };
-    cats[s.category].total++;
-    if (answers[s.id]?.correct) cats[s.category].correct++;
+  MC_SCENARIOS.forEach(s => {
+    if (!cats[s.category]) cats[s.category] = {mc_total:0,mc_correct:0,sa_score:null};
+    cats[s.category].mc_total++;
+    if (mcAnswers[s.id]?.correct) cats[s.category].mc_correct++;
+  });
+  SA_SCENARIOS.forEach(s => {
+    if (!cats[s.category]) cats[s.category] = {mc_total:0,mc_correct:0,sa_score:null};
+    if (saAnswers[s.id]?.assessment) cats[s.category].sa_score = saAnswers[s.id].assessment.overall_score;
   });
 
-  document.getElementById('summaryBreakdown').innerHTML = Object.entries(cats).map(([cat, d]) => {
-    const pct = Math.round((d.correct / d.total) * 100);
-    const color = pct >= 75 ? '#34D399' : pct >= 50 ? '#FCD34D' : '#F87171';
-    return `
-      <div class="breakdown-row">
-        <span style="color:var(--slate-light);">${cat}</span>
-        <span style="color:${color};font-weight:600;">${d.correct}/${d.total} (${pct}%)</span>
-      </div>`;
+  document.getElementById('summaryBreakdown').innerHTML = Object.entries(cats).map(([cat,d]) => {
+    const pct = Math.round((d.mc_correct/d.mc_total)*100);
+    return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;">
+      <span style="color:${CAT_COLORS[cat]||'var(--slate-light)'};">${cat}</span>
+      <span style="color:var(--slate-light);">MC: ${pct}%${d.sa_score!==null?' · SA: '+d.sa_score+'/10':''}</span>
+    </div>`;
   }).join('');
 
-  // Save to sessionStorage
-  const hotspotData = {
-    score, correct, total,
-    categoryBreakdown: cats,
-    timestamp: new Date().toISOString(),
-    candidateName: document.getElementById('candidateName').value || 'Unknown',
-    role: document.getElementById('candidateRole').value,
-  };
-  sessionStorage.setItem('sorvex_hotspot_result', JSON.stringify(hotspotData));
+  sessionStorage.setItem('sorvex_hotspot_result', JSON.stringify({
+    overall,mcPct,saAvg,mcCorrect,mcTotal,saScored,saTotal,
+    timestamp:new Date().toISOString(),
+    candidateName:document.getElementById('candidateName').value||'Unknown',
+    role:document.getElementById('candidateRole').value,
+  }));
 }
 
 function saveToProfile() {
   const data = sessionStorage.getItem('sorvex_hotspot_result');
   if (!data) return;
   const result = JSON.parse(data);
-  alert(`Hotspot score of ${result.score}% saved for ${result.candidateName || 'candidate'}. In production this would update the candidate profile via the API.`);
+  alert(`Hotspot score of ${result.overall}% saved for ${result.candidateName||'candidate'}.`);
 }
 
 function resetAssessment() {
-  answers = {};
-  currentIdx = 0;
-  document.getElementById('scenarioCard').style.display = 'block';
-  document.getElementById('scoreSummary').style.display = 'none';
+  mcAnswers={}; saAnswers={};
+  currentMcIdx=0; currentSaIdx=0; currentPhase='mc';
+  document.getElementById('scenarioCard').style.display='block';
+  document.getElementById('scoreSummary').style.display='none';
+  document.getElementById('tab-mc').classList.add('active');
+  document.getElementById('tab-sa').classList.remove('active');
   renderScenario();
-  updateProgress();
 }
 
 function renderDots() {
-  const dots = document.getElementById('scenarioDots');
-  dots.innerHTML = '';
-  filtered.forEach((s, i) => {
+  const mcDots = document.getElementById('mcDots');
+  mcDots.innerHTML = '';
+  MC_SCENARIOS.forEach((s,i) => {
     const dot = document.createElement('div');
     dot.className = 'scenario-dot';
-    dot.textContent = i + 1;
-    if (i === currentIdx) dot.classList.add('current');
-    else if (answers[s.id]) {
-      dot.classList.add(answers[s.id].correct ? 'answered-correct' : 'answered-wrong');
-    }
-    dot.onclick = () => { currentIdx = i; renderScenario(); };
-    dots.appendChild(dot);
+    dot.textContent = i+1;
+    if (currentPhase==='mc'&&i===currentMcIdx) dot.classList.add('current');
+    else if (mcAnswers[s.id]) dot.classList.add(mcAnswers[s.id].correct?'answered-correct':'answered-wrong');
+    dot.onclick = () => { currentPhase='mc'; currentMcIdx=i; renderScenario(); };
+    mcDots.appendChild(dot);
+  });
+  const saDots = document.getElementById('saDots');
+  saDots.innerHTML = '';
+  SA_SCENARIOS.forEach((s,i) => {
+    const dot = document.createElement('div');
+    dot.className = 'scenario-dot';
+    dot.textContent = 'S'+(i+1);
+    if (currentPhase==='sa'&&i===currentSaIdx) dot.classList.add('current');
+    else if (saAnswers[s.id]) dot.classList.add('answered-sa');
+    dot.onclick = () => { currentPhase='sa'; currentSaIdx=i; renderScenario(); };
+    saDots.appendChild(dot);
   });
 }
 
 function updateProgress() {
-  const answered = Object.keys(answers).length;
-  const total    = filtered.length;
-  const correct  = Object.values(answers).filter(a => a.correct).length;
-  const wrong    = answered - correct;
-  const pct      = total > 0 ? Math.round((answered / total) * 100) : 0;
-
+  const answered = Object.keys(mcAnswers).length + Object.keys(saAnswers).length;
+  const total = 20;
+  const pct = Math.round((answered/total)*100);
   document.getElementById('progressFraction').textContent = `${answered}/${total}`;
-  document.getElementById('progressPctLabel').textContent = pct + '%';
-  document.getElementById('progressBar').style.width = pct + '%';
-  document.getElementById('correctCount').textContent = correct;
-  document.getElementById('wrongCount').textContent   = wrong;
+  document.getElementById('progressPctLabel').textContent = pct+'%';
+  document.getElementById('progressBar').style.width = pct+'%';
+  document.getElementById('correctCount').textContent = Object.values(mcAnswers).filter(a=>a.correct).length;
+  document.getElementById('saCount').textContent = Object.keys(saAnswers).length;
 }
 
 function updateCategoryBreakdown() {
   const cats = {};
-  filtered.forEach(s => {
-    if (!cats[s.category]) cats[s.category] = { total: 0, correct: 0, answered: 0 };
-    cats[s.category].total++;
-    if (answers[s.id] !== undefined) {
-      cats[s.category].answered++;
-      if (answers[s.id].correct) cats[s.category].correct++;
-    }
+  MC_SCENARIOS.forEach(s => {
+    if (!cats[s.category]) cats[s.category]={mc_total:0,mc_correct:0,mc_answered:0,sa_score:null};
+    cats[s.category].mc_total++;
+    if (mcAnswers[s.id]!==undefined) { cats[s.category].mc_answered++; if(mcAnswers[s.id].correct) cats[s.category].mc_correct++; }
   });
-
-  const catColors = {
-    Safety:'var(--teal)', Teamwork:'var(--blue-light)',
-    Compliance:'#F59E0B', Ethics:'#A78BFA', Technical:'#34D399'
-  };
-
-  document.getElementById('categoryBreakdown').innerHTML = Object.entries(cats).map(([cat, d]) => {
-    const pct = d.answered > 0 ? Math.round((d.correct / d.answered) * 100) : null;
-    const color = pct === null ? 'var(--slate)' : pct >= 75 ? '#34D399' : pct >= 50 ? '#FCD34D' : '#F87171';
-    return `
-      <div style="margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <span style="font-size:12px;color:${catColors[cat] || 'var(--slate-light)'};">${cat}</span>
-          <span style="font-family:'DM Mono',monospace;font-size:10px;color:${color};">
-            ${pct !== null ? pct + '%' : '—'}
-          </span>
-        </div>
-        <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;">
-          <div style="height:100%;background:${color};width:${pct || 0}%;border-radius:2px;transition:width 0.4s;"></div>
-        </div>
-      </div>`;
+  SA_SCENARIOS.forEach(s => {
+    if (!cats[s.category]) cats[s.category]={mc_total:0,mc_correct:0,mc_answered:0,sa_score:null};
+    if (saAnswers[s.id]?.assessment) cats[s.category].sa_score=saAnswers[s.id].assessment.overall_score;
+  });
+  document.getElementById('categoryBreakdown').innerHTML = Object.entries(cats).map(([cat,d]) => {
+    const pct = d.mc_answered>0?Math.round((d.mc_correct/d.mc_answered)*100):null;
+    const color = CAT_COLORS[cat]||'var(--slate-light)';
+    return `<div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:12px;color:${color};">${cat}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--slate);">${pct!==null?pct+'%':'—'}${d.sa_score!==null?' · '+d.sa_score+'/10':''}</span>
+      </div>
+      <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;">
+        <div style="height:100%;background:${color};width:${pct||0}%;border-radius:2px;transition:width 0.4s;"></div>
+      </div>
+    </div>`;
   }).join('');
 }
 
-// Populate candidate select from batch results
-try {
-  const stored = sessionStorage.getItem('sorvex_batch_results');
-  if (stored) {
-    const results = JSON.parse(stored);
+// Load batch candidates
+(async () => {
+  try {
+    const res = await fetch('/api/load-batch');
+    const data = await res.json();
+    const results = data.results||[];
     const sel = document.getElementById('candidateSelect');
-    const SOC = {
-      '49-9051.00':'Power Line Installer','49-2022.00':'Telecom Installer',
-      '51-8013.00':'Power Plant Op.','51-8031.00':'Water/Wastewater Op.',
-      '51-8092.00':'Gas Plant Op.','43-5041.00':'Meter Reader',
-    };
-    results.forEach((r, i) => {
+    const SOC={'49-9051.00':'Power Line Installer','49-2022.00':'Telecom Installer','51-8013.00':'Power Plant Op.','51-8031.00':'Water/Wastewater Op.','51-8092.00':'Gas Plant Op.','43-5041.00':'Meter Reader'};
+    results.forEach((r,i) => {
       if (!r.data) return;
       const opt = document.createElement('option');
       opt.value = i;
-      opt.textContent = `#${i+1} — ${SOC[r.data.candidate_summary.soc_code] || 'Unknown'} (${r.data.candidate_summary.overall_score.toFixed(1)})`;
+      const memberNum = 'M'+String(i+1).padStart(4,'0');
+      opt.textContent = `${memberNum} — ${SOC[r.data.candidate_summary.soc_code]||'Unknown'} (${r.data.candidate_summary.overall_score.toFixed(1)})`;
       sel.appendChild(opt);
     });
-  }
-} catch(e) {}
+  } catch(e) {}
+})();
 
-// Init
 renderScenario();
-updateProgress();
-updateCategoryBreakdown();
 </script>
 {% endblock %}
