@@ -45,9 +45,9 @@ API_BASE    = os.getenv("API_BASE",    "https://sorvex360-predict-839675931790.u
 
 # ── Users ─────────────────────────────────────────────────────────────────────
 USERS = {
-    "admin":   {"password": "Sorvex!Admin2026",  "role": "admin",  "client": "All Clients",    "client_key": "admin"},
-    "clienta": {"password": "Sorvex!ClientA26",  "role": "viewer", "client": "Utility Corp A", "client_key": "clienta"},
-    "clientb": {"password": "Sorvex!ClientB26",  "role": "viewer", "client": "Utility Corp B", "client_key": "clientb"},
+    "admin":   {"password": "Admin-Sorvex-2026",  "role": "admin",  "client": "All Clients",    "client_key": "admin"},
+    "clienta": {"password": "ClientA-2026",        "role": "viewer", "client": "Utility Corp A", "client_key": "clienta"},
+    "clientb": {"password": "ClientB-2026",        "role": "viewer", "client": "Utility Corp B", "client_key": "clientb"},
 }
 
 # ── In-memory batch store ─────────────────────────────────────────────────────
