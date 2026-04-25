@@ -517,10 +517,15 @@ const SOC_LABELS = {
 
 // Load batch results from sessionStorage if available
 let allCandidates = [];
-try {
-  const stored = sessionStorage.getItem('sorvex_batch_results');
-  if (stored) allCandidates = JSON.parse(stored);
-} catch(e) {}
+// Load from server-side batch store
+async function loadFromServer() {
+  const client = sessionStorage.getItem('sorvex_selected_client') || 'all';
+  try {
+    const res = await fetch('/api/load-batch?client=' + client);
+    const data = await res.json();
+    allCandidates = data.results || [];
+  } catch(e) { allCandidates = []; }
+}
 
 function applyFilters() {
   const role   = document.getElementById('roleFilter').value;
@@ -711,7 +716,15 @@ function renderEmptySkillGap() {
   });
 }
 
-// Initial render
-renderDashboard(allCandidates);
+// Initial render — load from server then render
+(async () => {
+  await loadFromServer();
+  renderDashboard(allCandidates);
+  // Listen for client switcher changes
+  window.addEventListener('clientSwitch', async (e) => {
+    await loadFromServer();
+    applyFilters();
+  });
+})();
 </script>
 {% endblock %}
