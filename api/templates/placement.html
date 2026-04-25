@@ -348,7 +348,7 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>Rank</th>
+        <th>Member</th>
         <th>Role</th>
         <th>Age / State</th>
         <th>Composite</th>
@@ -508,9 +508,10 @@ function renderBucketList(listId, candidates, color) {
   list.innerHTML = candidates.map(c => {
     const s = c.data.candidate_summary;
     const tta = calcTTA(c);
+    const memberNum = 'M' + String(candidates.indexOf(c) + 1).padStart(4, '0');
     return `
       <div class="bucket-item">
-        <div class="bucket-item-role">${SOC_LABELS[s.soc_code] || s.soc_code}</div>
+        <div class="bucket-item-role">${memberNum} — ${SOC_LABELS[s.soc_code] || s.soc_code}</div>
         <div class="bucket-item-meta">
           <span class="bucket-item-info">Age ${c.payload.Age} · ${c.payload.State} · ${tta}mo TTA</span>
           <span class="bucket-item-score" style="color:${color};">${s.overall_score.toFixed(1)}</span>
@@ -583,7 +584,7 @@ function renderPlacementTable(candidates) {
 
     tbody.innerHTML += `
       <tr>
-        <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--slate);">${idx + 1}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--blue-light);">M${ String(idx+1).padStart(4,'0')}</td>
         <td style="color:var(--white);font-weight:500;font-size:12px;">${SOC_LABELS[s.soc_code] || s.soc_code}</td>
         <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--slate);">
           ${pl.Age} · ${pl.State}
