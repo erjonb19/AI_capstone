@@ -14,3 +14,4 @@ jinja2>=3.1.0
 python-multipart>=0.0.9
 itsdangerous>=2.1.2
 starlette>=0.27.0
+reportlab>=4.0.0
