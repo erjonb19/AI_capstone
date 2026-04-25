@@ -1,9 +1,9 @@
-# Sorvex 360 — v3.0
-# Adds: multi-page app, Jinja2 templates, session auth, role-based access
-# Keeps: all v2.1 prediction endpoints unchanged
+# Sorvex 360 — v3.1
+# New in v3.0: multi-page app, Jinja2 templates, session auth, role-based access
+# New in v3.1: in-memory batch store, multi-tenant client data separation, updated users
 
 from fastapi import FastAPI, HTTPException, Request, Form, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -21,14 +21,12 @@ import tempfile
 app = FastAPI(
     title="Sorvex 360",
     description="Predictive Workforce Intelligence — Utilities Sector",
-    version="3.0.0"
+    version="3.1.0"
 )
 
-# Session middleware — secret key for signing cookies
 SECRET_KEY = os.getenv("SECRET_KEY", "sorvex360-session-secret-change-in-prod")
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, max_age=86400)
 
-# CORS — keep open for existing frontend calls
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -37,7 +35,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Jinja2 templates
 templates = Jinja2Templates(directory="templates")
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -46,25 +43,29 @@ BUCKET_NAME = os.getenv("BUCKET_NAME", "sorvex360-raw-data")
 REGION      = os.getenv("REGION",      "us-central1")
 API_BASE    = os.getenv("API_BASE",    "https://sorvex360-predict-839675931790.us-central1.run.app")
 
-# ── Hardcoded users ───────────────────────────────────────────────────────────
+# ── Users ─────────────────────────────────────────────────────────────────────
 USERS = {
-    "admin":   {"password": "sorvex360",  "role": "admin",  "client": "Utility Corp A"},
-    "viewer":  {"password": "viewer123",  "role": "viewer", "client": "Utility Corp A"},
-    "clientb": {"password": "clientb123", "role": "viewer", "client": "Utility Corp B"},
+    "admin":   {"password": "Sorvex!Admin2026",  "role": "admin",  "client": "All Clients",    "client_key": "admin"},
+    "clienta": {"password": "Sorvex!ClientA26",  "role": "viewer", "client": "Utility Corp A", "client_key": "clienta"},
+    "clientb": {"password": "Sorvex!ClientB26",  "role": "viewer", "client": "Utility Corp B", "client_key": "clientb"},
+}
+
+# ── In-memory batch store ─────────────────────────────────────────────────────
+batch_store: Dict[str, List[Any]] = {
+    "clienta": [],
+    "clientb": [],
 }
 
 # ── Auth helpers ──────────────────────────────────────────────────────────────
 def get_session(request: Request) -> dict:
     return request.session.get("user", {})
 
-def require_auth(request: Request) -> Optional[RedirectResponse]:
-    """Returns a redirect if not authenticated, else None."""
+def require_auth(request: Request):
     if not request.session.get("user"):
         return RedirectResponse(url="/login", status_code=302)
     return None
 
-def require_admin(request: Request) -> Optional[RedirectResponse]:
-    """Returns a redirect if not admin."""
+def require_admin(request: Request):
     user = request.session.get("user", {})
     if not user:
         return RedirectResponse(url="/login", status_code=302)
@@ -288,11 +289,11 @@ def get_shap_factors(model_name: str, X: pd.DataFrame, n_factors: int = 3) -> li
 
 # ── Request schemas ───────────────────────────────────────────────────────────
 class CandidateProfile(BaseModel):
-    SOC_Code:                str   = Field(..., example="49-9051.00")
-    Age:                     int   = Field(..., example=35)
-    Gender:                  str   = Field(..., example="Male")
-    State:                   str   = Field(..., example="TX")
-    EducationLevel:          str   = Field(..., example="Associate Technical")
+    SOC_Code:                str
+    Age:                     int
+    Gender:                  str
+    State:                   str
+    EducationLevel:          str
     CognitiveScore:          int   = Field(..., ge=50, le=100)
     SimulationScore:         int   = Field(..., ge=50, le=100)
     BehavioralScore:         int   = Field(..., ge=50, le=100)
@@ -344,6 +345,16 @@ class ExplainRequest(BaseModel):
 class CompareRequest(BaseModel):
     candidate_a: CandidateProfile
     candidate_b: CandidateProfile
+
+class BatchSaveRequest(BaseModel):
+    results:    List[Any]
+    client_key: Optional[str] = None
+
+class HotspotAssessRequest(BaseModel):
+    question: str
+    category: str
+    response: str
+    role:     Optional[str] = "utility worker"
 
 
 # ── Risk tier/score logic ─────────────────────────────────────────────────────
@@ -442,7 +453,7 @@ def run_predictions(candidate: CandidateProfile) -> dict:
         },
         "predictions":   predictions,
         "cohort":        cohort,
-        "model_version": "v3.0",
+        "model_version": "v3.1",
     }
 
 
@@ -479,7 +490,7 @@ def _shap_summary_text(shap_factors: dict) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# PAGE ROUTES (protected)
+# PAGE ROUTES
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/", response_class=HTMLResponse)
@@ -488,15 +499,11 @@ async def root(request: Request):
         return RedirectResponse(url="/dashboard", status_code=302)
     return RedirectResponse(url="/login", status_code=302)
 
-# ── Login ──────────────────────────────────────────────────────────────────────
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     if request.session.get("user"):
         return RedirectResponse(url="/dashboard", status_code=302)
-    return templates.TemplateResponse(
-        request=request,
-        name="login.html"
-    )
+    return templates.TemplateResponse(request=request, name="login.html")
 
 @app.post("/login", response_class=HTMLResponse)
 async def login_submit(request: Request, username: str = Form(...), password: str = Form(...)):
@@ -508,68 +515,60 @@ async def login_submit(request: Request, username: str = Form(...), password: st
             context={"error": "Invalid username or password.", "username": username}
         )
     request.session["user"] = {
-        "username": username,
-        "role":     user["role"],
-        "client":   user["client"],
+        "username":   username,
+        "role":       user["role"],
+        "client":     user["client"],
+        "client_key": user["client_key"],
     }
     return RedirectResponse(url="/dashboard", status_code=302)
 
-# ── Logout ────────────────────────────────────────────────────────────────────
 @app.get("/logout")
 async def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/login", status_code=302)
 
-# ── Dashboard ─────────────────────────────────────────────────────────────────
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
     redir = require_auth(request)
     if redir: return redir
     return render_page(request, "dashboard.html", "dashboard")
 
-# ── Candidate Intelligence ────────────────────────────────────────────────────
 @app.get("/candidates", response_class=HTMLResponse)
 async def candidates(request: Request):
     redir = require_auth(request)
     if redir: return redir
     return render_page(request, "candidates.html", "candidates")
 
-# ── Placement Readiness ───────────────────────────────────────────────────────
 @app.get("/placement", response_class=HTMLResponse)
 async def placement(request: Request):
     redir = require_auth(request)
     if redir: return redir
     return render_page(request, "placement.html", "placement")
 
-# ── Batch Upload ──────────────────────────────────────────────────────────────
 @app.get("/upload", response_class=HTMLResponse)
 async def upload(request: Request):
     redir = require_auth(request)
     if redir: return redir
     return render_page(request, "upload.html", "upload")
 
-# ── Hotspot Module ────────────────────────────────────────────────────────────
 @app.get("/hotspot", response_class=HTMLResponse)
 async def hotspot(request: Request):
     redir = require_auth(request)
     if redir: return redir
     return render_page(request, "hotspot.html", "hotspot")
 
-# ── Single Screener ───────────────────────────────────────────────────────────
 @app.get("/screener", response_class=HTMLResponse)
 async def screener(request: Request):
     redir = require_auth(request)
     if redir: return redir
     return render_page(request, "screener.html", "screener")
 
-# ── About ─────────────────────────────────────────────────────────────────────
 @app.get("/about", response_class=HTMLResponse)
 async def about(request: Request):
     redir = require_auth(request)
     if redir: return redir
     return render_page(request, "about.html", "about")
 
-# ── Admin (admin only) ────────────────────────────────────────────────────────
 @app.get("/admin", response_class=HTMLResponse)
 async def admin(request: Request):
     redir = require_admin(request)
@@ -578,7 +577,113 @@ async def admin(request: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# API ENDPOINTS (unchanged from v2.1)
+# BATCH STORE API
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/save-batch")
+async def save_batch(request: Request, body: BatchSaveRequest):
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    client_key = body.client_key or user.get("client_key", "clienta")
+    if client_key == "admin":
+        client_key = "clienta"
+    if client_key not in batch_store:
+        raise HTTPException(status_code=400, detail=f"Unknown client: {client_key}")
+    if user.get("role") != "admin" and user.get("client_key") != client_key:
+        raise HTTPException(status_code=403, detail="Access denied")
+    batch_store[client_key] = body.results
+    return {"status": "saved", "client": client_key, "count": len(body.results)}
+
+@app.get("/api/load-batch")
+async def load_batch(request: Request, client: str = ""):
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    role       = user.get("role")
+    client_key = user.get("client_key")
+    if role == "admin":
+        if client == "all" or client == "":
+            combined = []
+            for ck, results in batch_store.items():
+                for r in results:
+                    tagged = dict(r) if isinstance(r, dict) else r
+                    if isinstance(tagged, dict):
+                        tagged["_client"] = ck
+                    combined.append(tagged)
+            return {"results": combined, "client": "all"}
+        elif client in batch_store:
+            return {"results": batch_store[client], "client": client}
+        else:
+            return {"results": [], "client": client}
+    else:
+        return {"results": batch_store.get(client_key, []), "client": client_key}
+
+@app.get("/api/batch-status")
+async def batch_status(request: Request):
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if user.get("role") == "admin":
+        return {
+            "clienta": len(batch_store.get("clienta", [])),
+            "clientb": len(batch_store.get("clientb", [])),
+            "total":   len(batch_store.get("clienta", [])) + len(batch_store.get("clientb", [])),
+        }
+    else:
+        client_key = user.get("client_key", "clienta")
+        return {"count": len(batch_store.get(client_key, []))}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# HOTSPOT GEMINI ASSESSMENT
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/assess-hotspot")
+async def assess_hotspot(req: HotspotAssessRequest):
+    prompt = f"""You are a utility workforce safety and compliance evaluator.
+
+A candidate for a {req.role} position was asked the following situational question in the {req.category} category:
+
+QUESTION: {req.question}
+
+CANDIDATE RESPONSE: {req.response}
+
+Evaluate this response on four dimensions (score each 1-10):
+1. Safety Awareness: Does the response show understanding of safety protocols and risks?
+2. Communication Clarity: Is the response clear, professional, and articulate?
+3. Decision Quality: Is the reasoning sound and the conclusion appropriate for a utility worker?
+4. Professional Judgment: Does the response reflect mature, responsible workplace behavior?
+
+Respond ONLY in this exact JSON format with no other text:
+{{
+  "safety_awareness": <1-10>,
+  "communication_clarity": <1-10>,
+  "decision_quality": <1-10>,
+  "professional_judgment": <1-10>,
+  "overall_score": <1-10>,
+  "feedback": "<2-3 sentence assessment of the response>",
+  "recommendation": "<one specific actionable recommendation>"
+}}"""
+
+    try:
+        result = call_gemini(prompt, max_tokens=400)
+        import json
+        clean = result.replace("```json", "").replace("```", "").strip()
+        parsed = json.loads(clean)
+        return parsed
+    except Exception as e:
+        return {
+            "safety_awareness": 5, "communication_clarity": 5,
+            "decision_quality": 5, "professional_judgment": 5,
+            "overall_score": 5,
+            "feedback": "Assessment could not be completed at this time.",
+            "recommendation": "Please try again."
+        }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PREDICTION API ENDPOINTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/health")
@@ -587,7 +692,7 @@ def health():
         "status":        "ok",
         "models_loaded": list(models.keys()),
         "shap_ready":    [k for k, v in shap_explainers.items() if v is not None],
-        "version":       "3.0.0"
+        "version":       "3.1.0"
     }
 
 @app.post("/predict")
@@ -605,7 +710,6 @@ def explain(req: ExplainRequest):
     soc_label    = _soc_label(c.SOC_Code)
     shap_text    = _shap_summary_text(shap_factors)
     percentile   = cohort.get("percentile", 50)
-
     retention_tier = preds.get("retention", {}).get("risk_tier", "Unknown")
     safety_tier    = preds.get("safety",    {}).get("risk_tier", "Unknown")
     promotion_tier = preds.get("promotion", {}).get("risk_tier", "Unknown")
@@ -614,33 +718,27 @@ def explain(req: ExplainRequest):
     summary_prompt = f"""You are a workforce analytics assistant for a utility staffing platform.
 Write a concise 2-3 sentence plain English summary for a hiring manager about a {soc_label} candidate.
 Be specific, professional, and actionable. No bullet points.
-
 Candidate: Age {c.Age}, {c.EducationLevel}, PI Score {c.Sorvex360PI_Score}
 Attendance: {c.AttendanceRate:.0%}, Safety Commitment: {c.SafetyCommitmentScore}/5
 Training Hours: {c.TotalTrainingHours:,}, Certifications: {c.CertificationsEarned}
 Prior Experience: {'Yes' if c.HasPriorTradeExperience else 'No'}, Veteran: {'Yes' if c.VeteranStatus else 'No'}
-
 Results: {overall_tier} overall (top {100-percentile}% of cohort)
 Retention: {retention_tier} | Safety: {safety_tier} | Promotion: {promotion_tier}
 Key drivers: {shap_text}
-
 Write 2-3 sentences. End with one specific recommendation."""
 
     plan_prompt = f"""You are a workforce development specialist at a utility staffing firm.
 Create a 90-day onboarding plan for a new {soc_label} hire.
 Use exactly three sections: Days 1-30, Days 31-60, Days 61-90.
 Each section: 2-3 specific actionable items targeting their risk areas.
-
 Risk profile:
 Retention: {retention_tier} | Safety: {safety_tier} | Promotion: {promotion_tier}
 Attendance: {c.AttendanceRate:.0%} | Safety Commitment: {c.SafetyCommitmentScore}/5
 Training Hours: {c.TotalTrainingHours:,}
-
 Generate the plan:"""
 
     summary = call_gemini(summary_prompt, max_tokens=400)
     plan    = call_gemini(plan_prompt,    max_tokens=2048)
-
     return {"summary": summary, "onboarding_plan": plan}
 
 @app.post("/compare")
@@ -661,17 +759,14 @@ def compare(req: CompareRequest):
 
     prompt = f"""You are a utility workforce hiring advisor. Compare two candidates and give a clear recommendation.
 Format: 3 short paragraphs — Candidate A (2 sentences), Candidate B (2 sentences), Recommendation (2 sentences).
-
 Candidate A — {_soc_label(a.SOC_Code)}:
 PI Score: {a.Sorvex360PI_Score} | Attendance: {a.AttendanceRate:.0%} | Safety: {a.SafetyCommitmentScore}/5
 Training: {a.TotalTrainingHours:,}hrs | Certs: {a.CertificationsEarned} | Prior Exp: {'Yes' if a.HasPriorTradeExperience else 'No'}
 {tier_summary(result_a)}
-
 Candidate B — {_soc_label(b.SOC_Code)}:
 PI Score: {b.Sorvex360PI_Score} | Attendance: {b.AttendanceRate:.0%} | Safety: {b.SafetyCommitmentScore}/5
 Training: {b.TotalTrainingHours:,}hrs | Certs: {b.CertificationsEarned} | Prior Exp: {'Yes' if b.HasPriorTradeExperience else 'No'}
 {tier_summary(result_b)}
-
 Provide your recommendation:"""
 
     commentary  = call_gemini(prompt, max_tokens=400)
