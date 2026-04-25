@@ -490,11 +490,12 @@ function renderList(filter = '') {
 
     if (filter && !role.toLowerCase().includes(filter) && !score.includes(filter)) return;
 
+    const memberNum = 'M' + String(idx + 1).padStart(4, '0');
     const item = document.createElement('div');
     item.className = 'candidate-item' + (idx === selectedIdx ? ' active' : '');
     item.onclick = () => selectCandidate(idx, item);
     item.innerHTML = `
-      <div class="candidate-rank">${idx + 1}</div>
+      <div class="candidate-rank" style="font-size:10px;">${memberNum}</div>
       <div class="candidate-info">
         <div class="candidate-role">${role}</div>
         <div class="candidate-meta">Age ${c.payload.Age} · ${c.payload.State} · ${c.payload.EducationLevel}</div>
