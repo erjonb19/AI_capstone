@@ -453,10 +453,15 @@ let allCandidates = [];
 let selectedIdx = null;
 let planVisible = false;
 
-try {
-  const stored = sessionStorage.getItem('sorvex_batch_results');
-  if (stored) allCandidates = JSON.parse(stored);
-} catch(e) {}
+// Load from server-side batch store
+async function loadFromServer() {
+  const client = sessionStorage.getItem('sorvex_selected_client') || 'all';
+  try {
+    const res = await fetch('/api/load-batch?client=' + client);
+    const data = await res.json();
+    allCandidates = data.results || [];
+  } catch(e) { allCandidates = []; }
+}
 
 // Sort by composite score descending
 allCandidates.sort((a,b) => (b.data?.candidate_summary?.overall_score || 0) - (a.data?.candidate_summary?.overall_score || 0));
@@ -764,7 +769,14 @@ function exportPDF() {
   alert('PDF export — connect to /pdf endpoint in main.py. Coming in next build.');
 }
 
-// Initial render
-renderList();
+// Initial render — load from server then render
+(async () => {
+  await loadFromServer();
+  renderList();
+  window.addEventListener('clientSwitch', async (e) => {
+    await loadFromServer();
+    renderList();
+  });
+})();
 </script>
 {% endblock %}
