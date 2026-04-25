@@ -634,10 +634,16 @@ async function runBatch(rows) {
   txt.textContent = `Complete! ${succeeded} scored, ${failed} failed.`;
   stats.textContent = '';
 
-  // Save to sessionStorage for other pages
+  // Save to server-side batch store
+  const validResults = batchResults.filter(r => r.data);
   try {
-    sessionStorage.setItem('sorvex_batch_results', JSON.stringify(batchResults.filter(r => r.data)));
-  } catch(e) {}
+    const saveRes = await fetch('/api/save-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ results: validResults })
+    });
+    if (!saveRes.ok) console.warn('Batch save failed:', saveRes.status);
+  } catch(e) { console.warn('Batch save error:', e); }
 
   setTimeout(() => {
     prog.style.display = 'none';
